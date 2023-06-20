@@ -8,11 +8,11 @@ There are two binary crates and one library crate included in this package. Bina
 The binary crates are `fasta2pfg` and `gfa2pfg` with usage:
 
 ```
-fasta2pfg < pangenome.fna > pfg.gfa
+fasta2pfg -t triggers.txt < pangenome.fna > pfg.gfa
 ```
 
 ```
-gfa2pfg < pangenome.gfa > pfg.gfa
+gfa2pfg -t triggers.txt < pangenome.gfa > pfg.gfa
 ```
 
 The library can be used from within rust programming language as follows:
