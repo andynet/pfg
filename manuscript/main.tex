@@ -245,10 +245,32 @@ The segment ID tells us that the current suffix of a segment join starts with a 
 \end{figure}
 
 \section{Related work}
-MARIA \cite{2022maria}
-Prefix-free Wheeler graphs \cite{2022pfwg}
-Prefix-free parsing for building big BWTs \cite{2019boucher}
+There are several proposed data structures implicitly relying on the structure
+of prefix-free graphs.
+
 Rpair: rescaling repair with rsync \cite{2019gagie}
+Prefix-free parsing for building big BWTs \cite{2019boucher}
+MONI and r-index \cite{}
+Prefix-free Wheeler graphs \cite{2022pfwg}
+MARIA \cite{2022maria}
+
+All of these works implement their own version of prefix-free graphs.
+We argue that separating prefix-free graphs as a standalone data structure can
+bring several benefits:
+
+\begin{itemize}
+    \item reduce the complexity of the presentation
+    \item allowing for better optimization of algorithms related to prefix-free graphs
+    \item supporting the theoretical research by clearly deliminating the relevant terms
+    \item allowing to bring prefix-free graphs closer to the biological data
+\end{itemize}
+
+Related to the last point, we remark that a possible future research can be in
+the proper choice of trigger words.
+As an example, we used stop codons in our experiments.
+This could create prefix-free graphs capturing some biologically relevant phenomena.
+Other options are recombination hotspots, highly repetitive elements, different
+binding sites and sites with increased breakage.
 
 \section{Results}
 We implemented the prefix-free graphs package in rust programming language.
