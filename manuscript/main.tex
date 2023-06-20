@@ -180,6 +180,30 @@ The reconstruction of the original sequence can then be done by expanding
 the particular path, ignoring last $k$ characters of each segment.
 
 \section{Suffix array construction}
+Suffix array is a permutation of string positions which lexicographically
+sorts the suffixes of the string starting at that position.
+It is extremely powerful data structure with many applications in efficient
+algorithms on strings.
+Enhanced by additional data structures, such as for example longest common
+prefix (LCP) array, it can fully substitute suffix tree and solve problems,
+such as exact pattern matching, repeat finding, maximum exact matching (MEM)
+finding, document retrieval and many more.
+
+There exists several algorithms for suffix array construction in linear time
+\cite{} with several practical implementations \cite{}.
+Altough their time complexity is linear, these algorithms become bottlenecks in
+some application due to their linear space complexity.
+This is especially relevant in pangenomics, where the datasets often do not fit
+in the memory.
+Nonetheless, as we shown in previous sections, prefix-free graphs can represent
+the pangenome in substantialy smaller space and therefore can fit in computer
+memory.
+
+Here we show another crucial advantage of prefix-free graphs - their ability to
+output the suffix array of the original string iterativelly.
+This allows us to generate the suffix array one-by-one with the possibility
+to compress or use in subsequential computations directly, giving us the ability
+to use the rich theory of suffix arrays without ever storing them.
 
 \section{Related work}
 MARIA \cite{2022maria}
