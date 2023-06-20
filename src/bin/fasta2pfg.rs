@@ -2,7 +2,7 @@ use bio::io::fasta;
 use clap::Parser;
 use std::collections::HashMap;
 use std::fs::File;
-use maria::pf;
+use pfg::pf;
 
 /// Build prefix-free graph
 #[derive(Parser, Debug)]
@@ -28,7 +28,6 @@ fn main() {
     let fasta = File::open(args.fasta_file).expect("Cannot open fasta file.");
     let mut records = fasta::Reader::new(fasta).records();
     while let Some(Ok(record)) = records.next() {
-        // record.seq().len();
         let mut seq = record.seq().to_owned();
         seq.push(b'.');
         pf::split_prefix_free(&seq, &triggers, &mut segments, &mut paths);
