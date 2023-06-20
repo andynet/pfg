@@ -1,4 +1,5 @@
 %% Options:
+
 %% twocolumn : Two column layout.
 %% hf: enable header and footer.
 \documentclass[twocolumn]{ceurart}
@@ -205,13 +206,53 @@ This allows us to generate the suffix array one-by-one with the possibility
 to compress or use in subsequential computations directly, giving us the ability
 to use the rich theory of suffix arrays without ever storing them.
 
+\subsection{Iterator preparation}
+In order to prepare the prefix-free graph to generate the suffix array of
+original pangenome we need to create several data structures.
+First, we concatenate all the prefix-free segments into a single string using
+a separator $\#$ and append a sentinel $\$$.
+We will call this concatenation \emph{segment join}.
+
+Next, for the segment join we calculate the suffix array and the LCP array.
+For this we can use the linear time, linear space algorithms mentioned previously,
+since the segment join is assumed to be much smaller than the original pangenome.
+
+Next, we need to calculate the segment ID array.
+Next, for each suffix of a segment join, we need to calculate the segment ID
+and the segment position.
+The segment ID tells us that the current suffix of a segment join starts with a particular segment.
+
+
 \section{Related work}
 MARIA \cite{2022maria}
 Prefix-free Wheeler graphs \cite{2022pfwg}
 Prefix-free parsing for building big BWTs \cite{2019boucher}
 Rpair: rescaling repair with rsync \cite{2019gagie}
 
-\section{Experiments}
+\section{Results}
+We implemented the prefix-free graphs package in rust programming language.
+There are two binary crates and one library crate included in the package.
+Binary crates serve the purpose of creating prefix-free graphs from FASTA and from GFA formats.
+Library crate provides an interface for working with the prefix-free graphs,
+mainly an iterator of suffix array in sublinear space and linear time.
+
+The binary crates are fasta2pfg and gfa2pfg with usage:
+\begin{minted}{bash}
+fasta2pfg -t triggers.txt < pangenome.fna > pfg.gfa
+
+gfa2pfg -t triggers.txt < pangenome.gfa > pfg.gfa
+\end{minted}
+
+The library can be used from within rust programming language as follows:
+
+\begin{minted}{rust}
+let pfg = PFG::load("pfg.gfa");
+
+for (i, sa_i) in pfg.iter().enumerate() {
+    println!("{}\t{}", i, sa_i);
+}
+\end{minted}
+
 \section{Discussion}
 
 \begin{acknowledgments}
