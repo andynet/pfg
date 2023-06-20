@@ -1,19 +1,16 @@
 use bio::io::fasta;
 use clap::Parser;
 use std::collections::HashMap;
-use std::fs::File;
 use pfg::pf;
+use std::io::{stdin, stdout};
 
 /// Build prefix-free graph
 #[derive(Parser, Debug)]
 #[command(author, version, about)]
 struct Args {
-    /// fasta file
-    fasta_file: String,
     /// trigger file, containing one trigger per line
+    #[arg(short)]
     trigger_file: String,
-    /// output in GFA format v1.1
-    output: String,
 }
 
 fn main() { 
@@ -25,18 +22,17 @@ fn main() {
     let mut segments = HashMap::new();
     let mut paths = Vec::new();
 
-    let fasta = File::open(args.fasta_file).expect("Cannot open fasta file.");
-    let mut records = fasta::Reader::new(fasta).records();
+    let mut records = fasta::Reader::new(stdin()).records();
     while let Some(Ok(record)) = records.next() {
         let mut seq = record.seq().to_owned();
-        seq.push(b'.');
+        let v = vec![b'.'; trigs_size];
+        seq.extend_from_slice(&v);
         pf::split_prefix_free(&seq, &triggers, &mut segments, &mut paths);
     }
 
     let (segments, paths) = pf::normalize(segments, paths);
 
-    let output = File::create(args.output).expect("Cannot create output file.");
-    pf::print_gfa(&segments, &paths, trigs_size, output)
+    pf::print_gfa(&segments, &paths, trigs_size, stdout())
         .expect("Error writting GFA");
 }
 
