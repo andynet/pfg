@@ -132,7 +132,13 @@ Another important feature of the segments is that they contain triggers only at
 the start or at the end of a segment.
 This feature guarantees that the set of segments is prefix-free, i.e. no
 segment is a prefix of another segment.
-% add sketch of a proof
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\linewidth]{images/prefixfree_proof.png}
+    \caption{Visual proof that the trigger words induce prefix-free segments.}
+    \label{fig:proof}
+\end{figure}
 
 % how to construct prefix free graphs
 To illustrate how to partition the sequences into segments consider a set of
@@ -172,10 +178,12 @@ represented in the GFA format as shown in the Figure \ref{fig:gfa}.
 
 \begin{figure}
     \centering
-    \includegraphics[width=\linewidth]{images/pfg.png}
+    \includegraphics[width=\linewidth]{images/pfg_gfa.png}
     \caption{Prefix-free graph in GFA format. Link lines omitted for brevity.}
     \label{fig:gfa}
 \end{figure}
+
+% add graph figure
 
 The reconstruction of the original sequence can then be done by expanding 
 the particular path, ignoring last $k$ characters of each segment.
@@ -222,6 +230,19 @@ Next, for each suffix of a segment join, we need to calculate the segment ID
 and the segment position.
 The segment ID tells us that the current suffix of a segment join starts with a particular segment.
 
+\begin{figure*}
+    \centering
+    \includegraphics[width=\linewidth]{images/segment_table.png}
+    \caption{}
+    \label{fig:segment_sa}
+\end{figure*}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\linewidth]{images/segment_metainfo.png}
+    \caption{}
+    \label{fig:segment_meta}
+\end{figure}
 
 \section{Related work}
 MARIA \cite{2022maria}
