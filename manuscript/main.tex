@@ -1,5 +1,3 @@
-%% The first command in your LaTeX source must be the \documentclass command.
-%%
 %% Options:
 %% twocolumn : Two column layout.
 %% hf: enable header and footer.
@@ -16,55 +14,34 @@
 %% auto break lines
 \setminted{breaklines=true}
 
-%%
-%% end of the preamble, start of the body of the document source.
 \begin{document}
 
-%%
-%% Rights management information.
-%% CC-BY is default license.
-\copyrightyear{2022}
+\copyrightyear{2023}
 \copyrightclause{
     Copyright for this paper by its authors.
     Use permitted under Creative Commons License Attribution 4.0 
     International (CC BY 4.0).
 }
 
-%%
-%% This command is for the conference information
 \conference{
-    Woodstock'22: Symposium on the irreproducible science,
-    June 07--11, 2022, Woodstock, NY
+    ITAT'23: Information technologies -- Applications and Theory
+    September 22--26, 2023, Tatranské Matliare, Vysoké Tatry
 }
 
-%%
-%% The "title" command
 \title{Prefix-free graphs and suffix array construction in sublinear space}
 
-\tnotemark[1]
-\tnotetext[1]{
-    You can use this document as the template for preparing your
-    publication. We recommend using the latest version of the ceurart style.
-}
-
-%%
-%% The "author" command and its associated commands are used to define
-%% the authors and their affiliations.
-\author[1,2]{Andrej Baláž}[%
-orcid=0000-0002-0877-7063,
-email=kulyabov-ds@rudn.ru,
-url=https://yamadharma.github.io/,
+\author[1]{Andrej Baláž}[
+orcid=0000-0001-0002-0003,
+email=andrejbalaz001@gmail.com,
 ]
 \cormark[1]
-\fnmark[1]
 \address[1]{
-    Peoples' Friendship University of Russia (RUDN University),
-    6 Miklukho-Maklaya St, Moscow, 117198, Russian Federation
+    Faculty of Mathematics, Physics and Informatics,
+    Comenius University, Mlynská dolina F1, 842 48 Bratislava, Slovakia
 }
 
-%% Footnotes
+% Footnotes
 \cortext[1]{Corresponding author.}
-\fntext[1]{These authors contributed equally.}
 
 %%
 %% The abstract is a short summary of the work to be presented in the
@@ -88,10 +65,8 @@ url=https://yamadharma.github.io/,
 %% Keywords. The author(s) should pick words that accurately describe
 %% the work being presented. Separate the keywords with commas.
 \begin{keywords}
-  LaTeX class \sep
-  paper template \sep
-  paper formatting \sep
-  CEUR-WS
+  pangenome \sep
+  suffix array
 \end{keywords}
 
 %%
@@ -142,9 +117,63 @@ This library contains an iterator, which can be directly used to generate the
 suffix array in sublinear space.
 
 \section{Prefix-free graphs}
-The idea of prefix-free graphs is inspired by 
+% some intro?
+The idea of prefix-free graphs is inspired by rsync \cite{}.
+% what are prefix-free graphs
+Given a set of sequences representing a pangenome, we can partition each
+sequence into \emph{segment}s.
+These segments form nodes of the prefix-free graph.
+The edges of a graph represent the adjacencies of the segment pairs, which are 
+present in the original strings.
+The adjacent segments are overlapping by a fixed number of characters $k$.
+We will call these $k$-sized overlaps triggers.
+Another important feature of the segments is that they contain triggers only at
+the start or at the end of a segment.
+This feature guarantees that the set of segments is prefix-free, i.e. no
+segment is a prefix of another segment.
+% add sketch of a proof
+
+% how to construct prefix free graphs
+To illustrate how to partition the sequences into segments consider a set of
+strings $S = {TACTACGTACT, TCGTACTACT, TCGTCGTACTACT}$.
+Next, assume we will partition the sequences using a set of trigger words 
+$T = {AC, CG}$.
+
+In stringology, strings are often flanked by so called \emph{sentinel} = $\$$.
+In our case, we need to append $k$ sentinels to the sequences.
+The reasons for doing so will become clear in the suffix array construction section.
+
+Then, using a sliding window we can scan through the sequences and each time we
+encounter a trigger word, we create a new segment from the start of the previous
+trigger word to the end of the current trigger word.
+Two special cases happen at the beginning of a sequence, when no previous
+trigger was encountered, and at the end.
+In the former case, the segment starts simply at the start of a sequence and in
+the later case the segment ends at a sequence end.
+
+During the sequence scan, each unique segment is assigned an ID.
+The original sequence can then be represented as a list of IDs, also called 
+\emph{path}s.
+
+The result of this procedure is a set of segments and a list of paths.
+In the previous example, the segments are ${ TAC, ACTAC, ACG, CGTAC, ACT\$\$, TCG, CGTCG }$
+and the paths are $[  ]$.
+
+Because each segment is represented in a set $S$ only once, the sum of lengths
+of segments is usually much smaller than the length of original sequences.
+
+This set of segments, together with the list of paths are already a prefix-free
+graph, but in order to be useful for the next part, we need to normalize it.
+By normalizing, we mean to sort the segments lexicographically and relabel the
+paths accordingly.
+This will give us a list of segments and a list of paths which can be directly
+represented in the GFA format as shown in the Figure \ref{}.
+
+The reconstruction of the original sequence can then be done by expanding 
+the particular path, ignoring last $k$ characters of each segment.
 
 \section{Suffix array construction}
+
 \section{Related work}
 MARIA \cite{2022maria}
 Prefix-free Wheeler graphs \cite{2022pfwg}
@@ -154,35 +183,19 @@ Rpair: rescaling repair with rsync \cite{2019gagie}
 \section{Experiments}
 \section{Discussion}
 
-%%
-%% The acknowledgments section is defined using the "acknowledgments" environment
-%% (and NOT an unnumbered section). This ensures the proper
-%% identification of the section in the article metadata, and the
-%% consistent spelling of the heading.
 \begin{acknowledgments}
-  Thanks to the developers of ACM consolidated LaTeX styles
-  \url{https://github.com/borisveytsman/acmart} and to the developers
-  of Elsevier updated \LaTeX{} templates
-  \url{https://www.ctan.org/tex-archive/macros/latex/contrib/els-cas-templates}.
+    Thanks to Alessia and Askar for their encouragement while developing prefix-free graphs.
 \end{acknowledgments}
 
-%%
-%% Define the bibliography file to be used
 \bibliography{sources}
 
-%%
-%% If your work has an appendix, this is the place to put it.
 \appendix
 
 \section{Online Resources}
 
-The sources for the ceur-art style are available via
+The sources for the prefix-free graphs are available via
 \begin{itemize}
-\item \href{https://github.com/yamadharma/ceurart}{GitHub},
-% \item \href{https://www.overleaf.com/project/5e76702c4acae70001d3bc87}{Overleaf},
-\item
-  \href{https://www.overleaf.com/latex/templates/template-for-submissions-to-ceur-workshop-proceedings-ceur-ws-dot-org/pkfscdkgkhcq}{Overleaf
-    template}.
+\item \href{https://github.com/andynet/pfg}{GitHub}.
 \end{itemize}
 
 \end{document}
