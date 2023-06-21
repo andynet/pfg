@@ -238,7 +238,7 @@ segment by linearly iterating the segment join and incrementing ID and position
 accordingly.
 Then, applying the inverse permutation of a suffix array to these arrays will
 change the order of computed values in a way corresponding to the sorted suffixes.
-The Table \ref{} shows the resulting suffix array, LCP array, segment ID array and segment position array.
+The Table \ref{tab:suffix} shows the resulting suffix array, LCP array, segment ID array and segment position array.
 
 \begin{figure}
     \centering
@@ -253,19 +253,14 @@ The Table \ref{} shows the resulting suffix array, LCP array, segment ID array a
 
 \input{sa_table.tex}
 
-\begin{figure*}
-    \centering
-    \includegraphics[width=\linewidth]{images/segment_table.png}
-    \caption{}
-    \label{fig:segment_sa}
-\end{figure*}
+In the Table \ref{tab:suffix}, one row can represent multiple positions of the
+pangenome.
+In order to be able to reconstruct the suffix array, we need to store some
+additional information for each segment.
+For each segment, we store it's length, it's starting positions in the implicit
+concatenated pangenome and the rank of it's right context.
 
-\begin{figure}
-    \centering
-    \includegraphics[width=\linewidth]{images/segment_metainfo.png}
-    \caption{}
-    \label{fig:segment_meta}
-\end{figure}
+\input{segment_table.tex}
 
 \section{Related work}
 There are several proposed data structures implicitly relying on the structure
