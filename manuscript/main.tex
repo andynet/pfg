@@ -225,10 +225,33 @@ Next, for the segment join we calculate the suffix array and the LCP array.
 For this we can use the linear time, linear space algorithms mentioned previously,
 since the segment join is assumed to be much smaller than the original pangenome.
 
-Next, we need to calculate the segment ID array.
-Next, for each suffix of a segment join, we need to calculate the segment ID
-and the segment position.
-The segment ID tells us that the current suffix of a segment join starts with a particular segment.
+Next, for each suffix of a segment join, we need to calculate the corresponding
+segment ID and the segment position.
+These two arrays represent the current suffix of a segment join starts with a
+particular segment and the position in this segment.
+This can be computed using an inverse permutation of a suffix array of a segment
+join in linear time.
+To illustrate the procedure, consider the segment join of our running example in
+Figure \ref{fig:ids_and_positions}.
+Each position of the join can be assigned a segment ID and a position in current
+segment by linearly iterating the segment join and incrementing ID and position
+accordingly.
+Then, applying the inverse permutation of a suffix array to these arrays will
+change the order of computed values in a way corresponding to the sorted suffixes.
+The Table \ref{} shows the resulting suffix array, LCP array, segment ID array and segment position array.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\linewidth]{images/ids_and_positions.png}
+    \caption{
+        Segment IDs and segment positions of a segment join. Permuting these
+        according to the inverse permutation of a suffix array results in 
+        segment ID array and segment position array shown in the Table \ref{fig:segment_sa}.
+    }
+    \label{fig:ids_and_positions}
+\end{figure}
+
+\input{sa_table.tex}
 
 \begin{figure*}
     \centering
