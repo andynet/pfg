@@ -1,0 +1,26 @@
+\begin{table*}
+    \label{tab:segment}
+    \begin{tabular}{rllll}
+        \toprule
+        \#sequences & pggb & vg & minigraph-cactus & PFG \\
+        \midrule
+        % 2 &
+        4   & 0m12s & 0m1s  & 3m47s  & 0m1s \\
+        16  & 0m19s & 0m1s  & 6m30s  & 0m1s \\
+        64  & 1m20s & 0m2s  & 13m30s & 0m1s \\
+        256 & 7m20s & 0m55s & 41m49s & 0m3s \\
+        \bottomrule
+    \end{tabular}
+    \caption{
+        Comparison of running times of pangenomic graph construction tools.
+        Some of these tools need some kind of preprocessing in order to build the graph.
+        pggb requires for the fasta files to be indexed.
+        In our case, due to the small size of our files, this time was negligible, but it can have a bigger impact when bigger genomes are considered.
+        VG builds a pangenome graph starting from a VCF file or a multiple sequence alignment.
+        In each case, those outputs require to perform time consuming steps.
+        Having a suitable VCF file requires to align each haplotype to a reference genome and subsequently performing variant calling.
+        Beyond being time consuming, using a linear reference in a first place can introduce some biases in the first place.
+        On the other hand, performing a multiple sequence alignment is also known to be potentially slow, according to the length and the abundance of the underlying sequences.
+    }
+\end{table*}
+
