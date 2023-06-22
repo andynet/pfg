@@ -1,0 +1,44 @@
+\section{Introduction}
+Suffix array is a data structure used in many fields, such as stringology,
+bioinformatics, and... .
+Particularly in bioinformatics, it is used as part of FM index, which in turn
+is used for read mapping.
+Recently, a new paradigm in bioinformatics was formed, moving from a single
+reference genome to a pangenome.
+The term pangenome was first used by \citet{tettelin2005genome} in 2005 during the
+resequencing experiments on streptococcus.
+Since then, the definition of a pangenome has shifted to any set of sequences
+analysed jointly \cite{computational2018computational}.
+Nevertheless, most pangenomes consist of highly related sequences and thus are
+highly repetitive.
+This leads to representation of pangenomes as graphs, where similar genome
+regions are represented by a single node and the nodes are conected to paths
+representing the original sequences.
+Several approaches of pangenomic graph construction exist, such as variation
+graphs \cite{church2015extending}?, cactus graphs \cite{paten2011cactus}, 
+Wheeler graphs \cite{gagie2017wheeler} ...
+Most of these approaches require an initial local alignment of similar regions,
+which makes them computationally expensive.
+Here we present a new class of graphs, prefix-free graphs, which are easy to
+construct and provide a way how to efficiently index them to allow pattern 
+search queries.
+Pangenomes introduced by...
+In computational pangenomics...
+Repetitive datasets...
+Graph pangenomes and textual pangenomes...
+Prefix-free parsing is a technique...
+Prefix-free graphs play an important role in improving space
+complexity of several efficient algorithms, but are never the concept is never
+framed as a pangenomic data structure.
+We think that separating and clearly defining this data structure can lead to
+more advancements...
+Our contribution is in defining a data structure called prefix-free graphs and
+showing how this data structure can be used to generate suffix array in
+sublinear space.
+Furthermore, we implemented two binaries for an easy construction of prefix-free
+graphs from a set of sequences, and from a graph in gfa format.
+Furthermore, we implemented rust library for working with prefix-free graphs.
+This library contains an iterator, which can be directly used to generate the 
+suffix array in sublinear space.
+
+

@@ -1,0 +1,203 @@
+\section{Suffix array construction}
+Suffix array is a permutation of string positions which lexicographically
+sorts the suffixes of the string starting at that position.
+It is extremely powerful data structure with many applications in efficient
+algorithms on strings.
+Enhanced by additional data structures, such as for example longest common
+prefix (LCP) array, it can fully substitute suffix tree and solve problems,
+such as exact pattern matching, repeat finding, maximum exact matching (MEM)
+finding, document retrieval and many more.
+
+There exists several algorithms for suffix array construction in linear time
+\cite{} with several practical implementations \cite{}.
+Altough their time complexity is linear, these algorithms become bottlenecks in
+some application due to their linear space complexity.
+This is especially relevant in pangenomics, where the datasets often do not fit
+in the memory.
+Nonetheless, as we shown in previous sections, prefix-free graphs can represent
+the pangenome in substantialy smaller space and therefore can fit in computer
+memory.
+
+Here we show another crucial advantage of prefix-free graphs - their ability to
+output the suffix array of the original string iterativelly.
+This allows us to generate the suffix array one-by-one with the possibility
+to compress or use in subsequential computations directly, giving us the ability
+to use the rich theory of suffix arrays without ever storing them.
+
+\subsection{Iterator preparation}
+In order to prepare the prefix-free graph to generate the suffix array of
+original pangenome we need to create several data structures.
+First, we concatenate all the prefix-free segments into a single string using
+a separator $\#$ and append a sentinel $\$$.
+We will call this concatenation \emph{segment join}.
+An example of a segment join is in the Figure \ref{fig:ids_and_positions}.
+
+Next, for the segment join we calculate the suffix array and the LCP array.
+For this we can use the linear time, linear space algorithms mentioned previously,
+since the segment join is usually much smaller than the original pangenome.
+
+Next, for each suffix of a segment join, we need to calculate the corresponding
+segment ID and the segment position.
+These two arrays represent the current suffix of a segment join starts with a
+particular segment and the position in this segment.
+This can be computed using an inverse permutation of a suffix array of a segment
+join in linear time.
+To illustrate the procedure, consider the segment join of our running example from
+Figure \ref{fig:ids_and_positions}.
+Each position of the join can be assigned a segment ID and a position in current
+segment by linearly iterating the segment join and incrementing ID and position
+accordingly.
+Then, applying the inverse permutation of a suffix array to these arrays will
+change the order of computed values in a way corresponding to the sorted suffixes.
+The Table \ref{tab:suffix} shows the resulting suffix array, LCP array,
+segment ID array and segment position array.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\linewidth]{images/ids_and_positions.png}
+    \caption{
+        Segment IDs and segment positions of a segment join. Permuting these
+        according to the inverse permutation of a suffix array results in 
+        segment ID array and segment position array shown in the Table \ref{fig:segment_sa}.
+    }
+    \label{fig:ids_and_positions}
+\end{figure}
+
+\input{sa_table.tex}
+
+In the Table \ref{tab:suffix}, one row can represent multiple positions of the
+pangenome.
+To identify these positions, we store some additional information in a second
+table \ref{tab:segment}.
+For each segment, we store it's length, it's starting positions in the pangenome
+and the rank of the right context of these positions.
+To calculate the starting positions and the ranks of the right contexts we use
+a path join.
+Similarly to segment join, a path join is a concatenation with delimiters $\#$
+and sentinel $\$$, but now constructed by concatenating the paths.
+An example of a path join for our running example is in the Figure \ref{fig:path_join}.
+Starting positions can then be calculated by cumulatively summing the lengths
+of the segments in path join and subtracting the overlaps.
+Computation of the ranks is more involved.
+We need to construct the suffix array of the path join and find it's inverse
+permutation $ISA$.
+This gives us ranks for each position in the path join.
+To determine the rank of the right context for position $i$, we simply take
+the value of the ranks $ISA[i+1]$.
+Finaly, we store the starts and ranks sorted by the rank values in the segment
+table as shown in Table \ref{tab:segment}.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\linewidth]{images/path_join.png}
+    \caption{}
+    \label{fig:path_join}
+\end{figure}
+
+\input{segment_table.tex}
+
+\subsection{Iterating suffix array}
+With the previous tables in memory, we have all we need to generate the suffix
+array entries.
+Due to the prefix-freeness of the segments and the construction of the segment join
+we can ignore all characters after the first delimiter of $\texttt{suffix}[i..]$.
+Then, each row in the suffix table represents a suffix of a particular segment.
+
+There are three cases where a letter at position $SA[i]$ can occur in these suffix segments:
+\begin{itemize}
+    \item it is a separator or the sentinel
+    \item it is at the end of a segment inside the trigger part
+    \item it is part of the segment outside the trigger part, separator and sentinel
+\end{itemize}
+
+In the first case, there is no corresponding position in the original pangenome,
+therefore we can skip these rows of the suffix table.
+% We can skip the first $n+1$ rows of the suffix table, because these suffixes
+% do not yield any suffix array entry.
+
+In the second case, the position is inside the trigger string.
+Since the possitions inside the triggers are represented twice, once at the end
+of a segment a second time at the beginning of the following segment, we need
+to choose when to report them.
+A natural choice is to report positions at the beginning of a segment and ignore
+positions at the end.
+Here we note that this choice also plays nicely with the previous choice of sentinel
+characters, since ignoring last $k$ characters will result in not printing
+sentinels either.
+In conclusion, if the length of a current segment suffix is smaller or equal to
+the size of the trigger words, we skip the row similarly as in the previous case.
+
+Finaly, in the last case we report the positions.
+The last case will partition the suffix table into the blocks of the same suffixes.
+As an example consider the rows 20 and 21, which together for a single block.
+All other blocks in the example consist of single rows and therefore we call them singletons.
+
+This partitioning leads to three cases (from simplest to hardest):
+\begin{itemize}
+    \item A singleton block, occuring only once in the whole pangenome
+    \item A singleton block, repeating several times in the pangenome
+    \item A non-singleton block
+\end{itemize}
+
+In the case of a singleton block with only a single occurence we need to report only a single suffix array entry.
+Given the row index $i$, this entry can be calculated with the following equation:
+
+\begin{equation}
+    \label{eq:sa_entry}
+    \texttt{SA entry} = \texttt{starts}[\texttt{ID}[i]] + \texttt{pos}[i]
+\end{equation}
+
+As an example, consider the row $13$ in the Suffix Table (\ref{tab:suffix}), the first row yielding a SA value.
+It's segment ID is $0$ and from the Segment Table (\ref{tab:segment}) we see that there is only one occurence of segment $0$ and it starts at position $9$ in the pangenome.
+The offset from the start of a segment $\texttt{pos}[13]$ is $0$.
+This yields the first entry of a suffix array $9 + 0 = 9$ corresponding to the lexicographically smallest suffix $P[9..] = \texttt{ACACT}$.
+
+The second, slightly more complex case is a singleton block with several occurences in the pangenome.
+For this case, we need to report as many suffix array entries as the number of occurences.
+Because the starting segment positions in the Segment Table (\ref{tab:segment}) are sorted based on their right context rank, we can iterate through these starting positions and apply Equation \ref{eq:sa_entry} to each of them.
+
+As an example, consider the row $14$ in the Suffix Table (\ref{tab:suffix}).
+This suffix occurs twice in the pangenome in segments starting at positions $15$ and $1$.
+Since the offset from the start of a segment $\texttt{pos}[14]$ is $0$, we report a suffix array entry $15 + 0 = 15$ and $1 + 0 = 1$, corresponding to the suffixes $P[15..] = \texttt{ACGACT}$ and $P[1..] = \texttt{ACGTACT}$.
+
+In the last case, we have a non-singleton block with suffixes of several segments, possibly with multiple occurences.
+These suffixes represent the same substring of the original pangenome.
+Here, we report a suffix array entry for each occurence of the substring in the pangenome.
+To identify which entry is the first, we need to find the starting position with the smallest right context rank.
+Because the ranks are sorted, this procedure is similar to the merging phase of a merge sort.
+To iterate through all suffix array entries in the block, we therefore always identify the segment start with the next smallest right context rank and apply Equation \ref{eq:sa_entry} to this segment start.
+
+As an example, consider the block at rows $[20..21]$ in the Suffix Table (\ref{tab:suffix}).
+The relevant segment IDs are $0$ and $3$, with segment starts at positions $9$, $8$, $14$ and $0$.
+The right context ranks from smallest to highest are $4, 5, 6, 9$ with the corresponding segment starts $8, 14, 0, 9$.
+Applying Equation \ref{eq:sa_entry} to these segment starts yields a suffix array entries $8 + 0 = 8$, $14 + 0 = 14$, $0 + 0 = 0$ and $9 + 1 = 10$, representing pangenome suffixes $P[8..] = \texttt{CACACT}$, $P[14..] = \texttt{CACGACT}$, $P[0..] = \texttt{CACGTACT}$, and $P[10..] = \texttt{CACT}$.
+
+\subsection{Application}
+There are several proposed data structures implicitly relying on the structure
+of prefix-free graphs.
+
+Rpair: rescaling repair with rsync \cite{2019gagie}
+Prefix-free parsing for building big BWTs \cite{2019boucher}
+MONI and r-index \cite{rossi2022moni,gagie2020fully}
+Prefix-free Wheeler graphs \cite{2022pfwg}
+MARIA \cite{2022maria}
+
+All of these works implement their own version of prefix-free graphs.
+We argue that separating prefix-free graphs as a standalone data structure can
+bring several benefits:
+
+\begin{itemize}
+    \item reduce the complexity of the presentation
+    \item allowing for better optimization of algorithms related to prefix-free graphs
+    \item supporting the theoretical research by clearly deliminating the relevant terms
+    \item allowing to bring prefix-free graphs closer to the biological data
+\end{itemize}
+
+Related to the last point, we remark that a possible future research can be in
+the proper choice of trigger words.
+As an example, we used stop codons in our experiments.
+This could create prefix-free graphs capturing some biologically relevant phenomena.
+Other options are recombination hotspots, highly repetitive elements, different
+binding sites and sites with increased breakage.
+
+
