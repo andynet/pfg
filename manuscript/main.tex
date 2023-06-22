@@ -343,8 +343,38 @@ This partitioning leads to three cases (from simplest to hardest):
     \item A non-singleton block
 \end{itemize}
 
+In the case of a singleton block with only a single occurence we need to report only a single suffix array entry.
+Given the row index $i$, this entry can be calculated with the following equation:
 
+\begin{equation}
+    \label{eq:sa_entry}
+    \texttt{SA entry} = \texttt{starts}[\texttt{ID}[i]] + \texttt{pos}[i]
+\end{equation}
 
+As an example, consider the row $13$ in the Suffix Table (\ref{tab:suffix}), the first row yielding a SA value.
+It's segment ID is $0$ and from the Segment Table (\ref{tab:segment}) we see that there is only one occurence of segment $0$ and it starts at position $9$ in the pangenome.
+The offset from the start of a segment $\texttt{pos}[13]$ is $0$.
+This yields the first entry of a suffix array $9 + 0 = 9$ corresponding to the lexicographically smallest suffix $P[9..] = \texttt{ACACT}$.
+
+The second, slightly more complex case is a singleton block with several occurences in the pangenome.
+For this case, we need to report as many suffix array entries as the number of occurences.
+Because the starting segment positions in the Segment Table (\ref{tab:segment}) are sorted based on their right context rank, we can iterate through these starting positions and apply Equation \ref{eq:sa_entry} to each of them.
+
+As an example, consider the row $14$ in the Suffix Table (\ref{tab:suffix}).
+This suffix occurs twice in the pangenome in segments starting at positions $15$ and $1$.
+Since the offset from the start of a segment $\texttt{pos}[14]$ is $0$, we report a suffix array entry $15 + 0 = 15$ and $1 + 0 = 1$, corresponding to the suffixes $P[15..] = \texttt{ACGACT}$ and $P[1..] = \texttt{ACGTACT}$.
+
+In the last case, we have a non-singleton block with suffixes of several segments, possibly with multiple occurences.
+These suffixes represent the same substring of the original pangenome.
+Here, we report a suffix array entry for each occurence of the substring in the pangenome.
+To identify which entry is the first, we need to find the starting position with the smallest right context rank.
+Because the ranks are sorted, this procedure is similar to the merging phase of a merge sort.
+To iterate through all suffix array entries in the block, we therefore always identify the segment start with the next smallest right context rank and apply Equation \ref{eq:sa_entry} to this segment start.
+
+As an example, consider the block at rows $[20..21]$ in the Suffix Table (\ref{tab:suffix}).
+The relevant segment IDs are $0$ and $3$, with segment starts at positions $9$, $8$, $14$ and $0$.
+The right context ranks from smallest to highest are $4, 5, 6, 9$ with the corresponding segment starts $8, 14, 0, 9$.
+Applying Equation \ref{eq:sa_entry} to these segment starts yields a suffix array entries $8 + 0 = 8$, $14 + 0 = 14$, $0 + 0 = 0$ and $9 + 1 = 10$, representing pangenome suffixes $P[8..] = \texttt{CACACT}$, $P[14..] = \texttt{CACGACT}$, $P[0..] = \texttt{CACGTACT}$, and $P[10..] = \texttt{CACT}$.
 
 \section{Related work}
 There are several proposed data structures implicitly relying on the structure
