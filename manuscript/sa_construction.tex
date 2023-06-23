@@ -1,91 +1,64 @@
 \section{Suffix array construction}
-Suffix array is a permutation of string positions which lexicographically
+A suffix array is a permutation of string positions which lexicographically
 sorts the suffixes of the string starting at that position.
-It is extremely powerful data structure with many applications in efficient
-algorithms on strings.
-Enhanced by additional data structures, such as for example longest common
-prefix (LCP) array, it can fully substitute suffix tree and solve problems,
-such as exact pattern matching, repeat finding, maximum exact matching (MEM)
-finding, document retrieval and many more.
+It is an influential data structure with many applications in efficient string algorithms solving problems such as exact pattern matching, repeat finding, maximum exact match (MEM) finding, document retrieval and many more.
 
-There exists several algorithms for suffix array construction in linear time
-\cite{} with several practical implementations \cite{}.
-Altough their time complexity is linear, these algorithms become bottlenecks in
-some application due to their linear space complexity.
-This is especially relevant in pangenomics, where the datasets often do not fit
-in the memory.
-Nonetheless, as we shown in previous sections, prefix-free graphs can represent
-the pangenome in substantialy smaller space and therefore can fit in computer
-memory.
+There exist several algorithms for suffix array construction in linear time \cite{skew2003karkkainen,sais2009nong,saoverview2007puglisi} with several practical implementations \cite{louza2017inducing,libdivsufsort}.
+Despite their linear time complexity, these algorithms become bottlenecks in some applications because of their linear space complexity.
+This observation is especially relevant in pangenomics, where the datasets often do not fit in the computer memory.
 
-Here we show another crucial advantage of prefix-free graphs - their ability to
-output the suffix array of the original string iterativelly.
-This allows us to generate the suffix array one-by-one with the possibility
-to compress or use in subsequential computations directly, giving us the ability
-to use the rich theory of suffix arrays without ever storing them.
+Here, we show another crucial advantage of prefix-free graphs.
+Although they do not offer any improvement in theoretical guarantees in the worst case, in practice, they often represent the pangenome in a substantially smaller space and allow us to generate the suffix array values one by one, possibly using them directly in subsequential computation or storing them in compressed form.
+This iteration can be done without ever expanding the pangenome to its textual representation in space proportional to the sum of segment lengths and the sum of path lengths.
 
 \subsection{Iterator preparation}
-In order to prepare the prefix-free graph to generate the suffix array of
-original pangenome we need to create several data structures.
-First, we concatenate all the prefix-free segments into a single string using
-a separator $\#$ and append a sentinel $\$$.
+To prepare the iterator of a suffix array of the pangenome from a prefix-free graph, we need to create several data structures.
+First, we concatenate all the segments into a single string using a separator $\#$ and append a sentinel $\$$.
 We will call this concatenation \emph{segment join}.
-An example of a segment join is in the Figure \ref{fig:ids_and_positions}.
+An example of a segment join is in Figure \ref{fig:ids_and_positions}.
 
-Next, for the segment join we calculate the suffix array and the LCP array.
-For this we can use the linear time, linear space algorithms mentioned previously,
-since the segment join is usually much smaller than the original pangenome.
+Next, we calculate the segment join's suffix array and the longest common prefix (LCP) array.
+For both of these arrays, there exist algorithms with linear time and space complexity which we can use.
+We note that these linear complexities are proportional to the length of the segment join, which is usually much smaller than the original pangenome.
 
-Next, for each suffix of a segment join, we need to calculate the corresponding
-segment ID and the segment position.
-These two arrays represent the current suffix of a segment join starts with a
-particular segment and the position in this segment.
-This can be computed using an inverse permutation of a suffix array of a segment
-join in linear time.
-To illustrate the procedure, consider the segment join of our running example from
-Figure \ref{fig:ids_and_positions}.
-Each position of the join can be assigned a segment ID and a position in current
-segment by linearly iterating the segment join and incrementing ID and position
-accordingly.
-Then, applying the inverse permutation of a suffix array to these arrays will
-change the order of computed values in a way corresponding to the sorted suffixes.
-The Table \ref{tab:suffix} shows the resulting suffix array, LCP array,
+Next, for each suffix of the segment join, we need to calculate the corresponding segment ID and position values.
+The value segment ID represents in what segment the current suffix starts, and the value segment position represents at what position in that particular segment the current suffix starts.
+These arrays can be computed using an inverse permutation of a suffix array of a segment join in linear time.
+To illustrate the procedure, consider the segment join of our running example from Figure \ref{fig:ids_and_positions}.
+Each position of the join can be assigned a segment ID and a position in the current segment by linearly scanning the segment join and incrementing the ID and position accordingly.
+Then, applying the inverse permutation of a suffix array to these arrays changes the order of computed values in correspondence to the sorted suffixes.
+Table \ref{tab:suffix} shows the resulting suffix array, LCP array,
 segment ID array and segment position array.
 
 \begin{figure}
     \centering
     \includegraphics[width=\linewidth]{images/ids_and_positions.png}
     \caption{
-        Segment IDs and segment positions of a segment join. Permuting these
-        according to the inverse permutation of a suffix array results in 
-        segment ID array and segment position array shown in the Table \ref{fig:segment_sa}.
+        Segment IDs and segment positions of a segment join. 
+        Permuting these according to the inverse permutation of a suffix array results in segment ID array and segment position array shown in Table \ref{tab:suffix}.
     }
     \label{fig:ids_and_positions}
 \end{figure}
 
 \input{sa_table.tex}
 
-In the Table \ref{tab:suffix}, one row can represent multiple positions of the
+In Table \ref{tab:suffix}, one row can represent multiple positions of the
 pangenome.
-To identify these positions, we store some additional information in a second
-table \ref{tab:segment}.
-For each segment, we store it's length, it's starting positions in the pangenome
-and the rank of the right context of these positions.
-To calculate the starting positions and the ranks of the right contexts we use
-a path join.
-Similarly to segment join, a path join is a concatenation with delimiters $\#$
-and sentinel $\$$, but now constructed by concatenating the paths.
-An example of a path join for our running example is in the Figure \ref{fig:path_join}.
-Starting positions can then be calculated by cumulatively summing the lengths
+To identify these positions, we store some additional information in Table \ref{tab:segment}.
+For each segment, we store its length, starting positions in the pangenome and the rank of the right context of these positions.
+To calculate the starting positions and the ranks of the right contexts, we use a \emph{path join}.
+Similarly to segment join, a path join is a concatenation with delimiters $\#$ and sentinel $\$$, but now constructed by concatenating the paths.
+An example of a path join for our running example is in Figure \ref{fig:path_join}.
+Starting positions can be calculated by cumulatively summing the lengths
 of the segments in path join and subtracting the overlaps.
-Computation of the ranks is more involved.
-We need to construct the suffix array of the path join and find it's inverse
-permutation $ISA$.
-This gives us ranks for each position in the path join.
-To determine the rank of the right context for position $i$, we simply take
-the value of the ranks $ISA[i+1]$.
-Finaly, we store the starts and ranks sorted by the rank values in the segment
-table as shown in Table \ref{tab:segment}.
+
+The computation of ranks is more involved.
+It uses the normalized form of prefix-free graphs since it relies on a lexicographically smaller ID in a path representing a lexicographically smaller segment.
+We construct the suffix array of the path join and find its inverse permutation $\texttt{ISA}$.
+$\texttt{ISA}$ gives us ranks for each position in the path join.
+To determine the rank of the right context for position $i$, we take
+the value of $\texttt{ISA}[i+1]$.
+Finally, we store the starts and ranks sorted by the rank values in the segment table as shown in Table \ref{tab:segment}.
 
 \begin{figure}
     \centering
