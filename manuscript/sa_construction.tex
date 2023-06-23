@@ -103,6 +103,11 @@ Due to the prefix-freeness of the segments and the construction of the segment j
 we can ignore all characters after the first delimiter of $\texttt{suffix}[i..]$.
 Then, each row in the suffix table represents a suffix of a particular segment.
 
+% the prefix-free property hold also for all suffixes of segments longer than k
+% The size of prefix-free graphs can be 
+% Because each segment is represented in a set $S$ only once, the sum of lengths
+% of segments is usually much smaller than the length of original sequences.
+
 There are three cases where a letter at position $SA[i]$ can occur in these suffix segments:
 \begin{itemize}
     \item it is a separator or the sentinel

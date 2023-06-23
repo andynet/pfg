@@ -1,22 +1,32 @@
 \section{Prefix-free graphs}
-% some intro?
-The idea of prefix-free graphs is inspired by rsync \cite{kornblum2006identifying}.
-%% Context-triggered piecewise hashing (CTPH) is a technique for parsing
-%% strings into blocks such that long repeated substrings are parsed the same
-%% way (except possibly at the beginning or end of the substrings).
+The idea of prefix-free graphs is inspired by a technique used in the tool rsync named Context-Triggered Piecewise Hashing (CTPH) \cite{kornblum2006identifying}.
+CTPH uses a rolling hash to partition a string into substrings such that long repeated substrings are partitioned the same way.
+These substrings are then hashed with a traditional hash function and stored as a string signature.
+The signatures of several files are then compared to determine their changes.
 
-% what are prefix-free graphs
-Given a set of sequences representing a pangenome, we can partition each
-sequence into \emph{segment}s.
-These segments form nodes of the prefix-free graph.
-The edges of a graph represent the adjacencies of the segment pairs, which are 
-present in the original strings.
-The adjacent segments are overlapping by a fixed number of characters $k$.
-We will call these $k$-sized overlaps triggers.
-Another important feature of the segments is that they contain triggers only at
-the start or at the end of a segment.
-This feature guarantees that the set of segments is prefix-free, i.e. no
-segment is a prefix of another segment.
+In prefix-free graphs, we partition each sequence in a given pangenome into \emph{segment}s.
+These segments form nodes of the prefix-free graph, and their adjacencies in the original sequences constitute edges.
+The sequences are then represented as \emph{path}s in the graph.
+
+The segments have two essential characteristics, which makes them a good choice for nodes of a pangenomic graph.
+Similarly to CTPH, long repeated sequences will be partitioned the same way.
+Furthermore, no segment is a prefix of another, making a set of segments prefix-free.
+The second characteristic is crucial for connecting prefix-free graphs and suffix arrays, as will be presented in the next section.
+
+To create a prefix-free graph from a given pangenome $P$, we define a set of trigger words $T$, where each trigger is a string of length $k$.
+For this set $T$, we build an Aho-Corasick automaton \cite{aho1975efficient}.
+Then, for each sequence in pangenome $P$, we append $k$ sentinel characters and iterate over such modified sequence, searching for matches with set $T$ using the automaton.
+Each time we encounter a trigger word, we recognize a new segment from the start of the previous trigger word to the end of the current trigger word.
+If the segment's sequence was not yet observed during the scan, we add it to the set of segments and assign a unique ID.
+Each time we append the corresponding ID to the path representing the original sequence. 
+
+Two special cases happen during the sequence scan, one at the beginning, when no previous trigger word was encountered, and another at the end, when the last $k$ characters are sentinels.
+These are addressed by simply starting the first segment at the start of a sequence and ending the last at the sequence end.
+
+Notably, the adjacent segments overlap by exactly $k$ characters.
+Furthermore, trigger words occur only at the beginnings or ends of segments because any occurrence of a trigger word in the middle of a segment would break it into two.
+This feature and the choice of sentinels outside the sequence's alphabet guarantee that the set of segments is prefix-free.
+A sketch of the proof is shown in Figure \ref{fig:proof}.
 
 \begin{figure}
     \centering
@@ -25,54 +35,21 @@ segment is a prefix of another segment.
     \label{fig:proof}
 \end{figure}
 
-% how to construct prefix free graphs
-To illustrate how to partition the sequences into segments consider a set of
-strings $S = {TACTACGTACT, TCGTACTACT, TCGTCGTACTACT}$.
-Next, assume we will partition the sequences using a set of trigger words 
-$T = {AC, CG}$.
+After the previous steps, the set of segments and the list of paths already represent a prefix-free graph.
+However, to simplify the usage of prefix-free graphs, we recommend normalizing them.
+During the normalization, we sort segments lexicographically and change their IDs to correspond to the lexicographical ranks.
+This relabeling is then also propagated to paths accordingly. 
 
-In stringology, strings are often flanked by so called \emph{sentinel} = $\$$.
-In our case, we need to append $k$ sentinels to the sequences.
-The reasons for doing so will become clear in the suffix array construction section.
-
-Then, using a sliding window we can scan through the sequences and each time we
-encounter a trigger word, we create a new segment from the start of the previous
-trigger word to the end of the current trigger word.
-Two special cases happen at the beginning of a sequence, when no previous
-trigger was encountered, and at the end.
-In the former case, the segment starts simply at the start of a sequence and in
-the later case the segment ends at a sequence end.
-
-During the sequence scan, each unique segment is assigned an ID.
-The original sequence can then be represented as a list of IDs, also called 
-\emph{path}s.
-
-The result of this procedure is a set of segments and a list of paths.
-In the previous example, the segments are ${ TAC, ACTAC, ACG, CGTAC, ACT\$\$, TCG, CGTCG }$
-and the paths are $[  ]$.
-
-Because each segment is represented in a set $S$ only once, the sum of lengths
-of segments is usually much smaller than the length of original sequences.
-
-This set of segments, together with the list of paths are already a prefix-free
-graph, but in order to be useful for the next part, we need to normalize it.
-By normalizing, we mean to sort the segments lexicographically and relabel the
-paths accordingly.
-This will give us a list of segments and a list of paths which can be directly
-represented in the GFA format as shown in the Figure \ref{fig:gfa}.
+To illustrate the entire procedure, consider a set of sequences $P = {}$ and a set of trigger words $T = {AC, CG}$.
+After the partitioning, we obtain a set of segments with IDs ${}$ and a list of paths $[]$.
+After the normalization, we get a prefix-free graph which can be directly represented in GFA format as shown in Figure \ref{fig:gfa}.
 
 \begin{figure}
     \centering
-    % \includegraphics[width=\linewidth]{images/pfg.drawio.png}
-    % \includegraphics[width=0.5\linewidth]{images/pfg_gfa.v2.png}
     \includegraphics[width=\linewidth]{images/pfg_gfa.v3.png}
     \caption{Prefix-free graph in GFA format. Link lines omitted for brevity.}
     \label{fig:gfa}
 \end{figure}
 
-% add graph figure
-
-The reconstruction of the original sequence can then be done by expanding 
-the particular path, ignoring last $k$ characters of each segment.
-
+From this representation, original sequences of a pangenome can be reconstructed by expanding the segment IDs in a particular path, ignoring the last $k$ characters of each segment.
 
