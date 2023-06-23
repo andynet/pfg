@@ -2,13 +2,13 @@
 The idea of prefix-free graphs is inspired by a technique used in the tool rsync named Context-Triggered Piecewise Hashing (CTPH) \cite{kornblum2006identifying}.
 CTPH uses a rolling hash to partition a string into substrings such that long repeated substrings are partitioned the same way.
 These substrings are then hashed with a traditional hash function and stored as a string signature.
-The signatures of several files are then compared to determine their changes.
+The signatures of several files are then compared to determine changes.
 
 In prefix-free graphs, we partition each sequence in a given pangenome into \emph{segment}s.
 These segments form nodes of the prefix-free graph, and their adjacencies in the original sequences constitute edges.
-The sequences are then represented as \emph{path}s in the graph.
+The sequences are represented as \emph{path}s in the graph.
 
-The segments have two essential characteristics, which makes them a good choice for nodes of a pangenomic graph.
+The segments have two essential characteristics making them a good choice for nodes of a pangenomic graph.
 Similarly to CTPH, long repeated sequences will be partitioned the same way.
 Furthermore, no segment is a prefix of another, making a set of segments prefix-free.
 The second characteristic is crucial for connecting prefix-free graphs and suffix arrays, as will be presented in the next section.
@@ -40,8 +40,8 @@ However, to simplify the usage of prefix-free graphs, we recommend normalizing t
 During the normalization, we sort segments lexicographically and change their IDs to correspond to the lexicographical ranks.
 This relabeling is then also propagated to paths accordingly. 
 
-To illustrate the entire procedure, consider a set of sequences $P = {}$ and a set of trigger words $T = {AC, CG}$.
-After the partitioning, we obtain a set of segments with IDs ${}$ and a list of paths $[]$.
+To illustrate the entire procedure, consider a set of sequences $P = \{$\texttt{CACGTACT}, \texttt{CACACT}, \texttt{CACGACT}$\}$ and a set of trigger words $T = \{$\texttt{AC}, \texttt{CG}$\}$.
+After the partitioning, we obtain a set of segments with IDs $\{$\texttt{0:CAC}, \texttt{1:ACG}, \texttt{2:CGTAC}, \texttt{3:ACT..}, \texttt{4:ACAC}, \texttt{5:CGAC}$\}$ and a list of paths \texttt{[[0,1,2,3], [0,4,3], [0,1,5,3]]}.
 After the normalization, we get a prefix-free graph which can be directly represented in GFA format as shown in Figure \ref{fig:gfa}.
 
 \begin{figure}
