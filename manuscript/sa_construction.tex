@@ -69,42 +69,28 @@ Finally, we store the starts and ranks sorted by the rank values in the segment 
 
 \input{segment_table.tex}
 
-\subsection{Iterating suffix array}
-With the previous tables in memory, we have all we need to generate the suffix
-array entries.
-Due to the prefix-freeness of the segments and the construction of the segment join
-we can ignore all characters after the first delimiter of $\texttt{suffix}[i..]$.
-Then, each row in the suffix table represents a suffix of a particular segment.
+\subsection{Iteration}
+With the previous tables stored in memory, we have all the necessary ingredients to generate the suffix array entries.
 
-% the prefix-free property hold also for all suffixes of segments longer than k
-% The size of prefix-free graphs can be 
-% Because each segment is represented in a set $S$ only once, the sum of lengths
-% of segments is usually much smaller than the length of original sequences.
-
-There are three cases where a letter at position $SA[i]$ can occur in these suffix segments:
+Each row in the suffix table represents a suffix of a particular segment.
+There are four cases of what the first position of these suffixes can represent within the segments:
 \begin{itemize}
-    \item it is a separator or the sentinel
-    \item it is at the end of a segment inside the trigger part
-    \item it is part of the segment outside the trigger part, separator and sentinel
+    \item the sentinel
+    \item a separator
+    \item a position within the last $k$ characters of a segment
+    \item a position outside the last $k$ characters, separator and sentinel
 \end{itemize}
 
-In the first case, there is no corresponding position in the original pangenome,
-therefore we can skip these rows of the suffix table.
-% We can skip the first $n+1$ rows of the suffix table, because these suffixes
-% do not yield any suffix array entry.
+Since the original pangenome has no corresponding position for the sentinel or separator characters, we can skip the first rows representing them.
 
-In the second case, the position is inside the trigger string.
-Since the possitions inside the triggers are represented twice, once at the end
-of a segment a second time at the beginning of the following segment, we need
-to choose when to report them.
-A natural choice is to report positions at the beginning of a segment and ignore
-positions at the end.
-Here we note that this choice also plays nicely with the previous choice of sentinel
-characters, since ignoring last $k$ characters will result in not printing
-sentinels either.
-In conclusion, if the length of a current segment suffix is smaller or equal to
-the size of the trigger words, we skip the row similarly as in the previous case.
+In the third case, the position is inside the trigger word or the sentinels appended during the graph construction.
+The positions inside the trigger words are represented twice in the suffix table, once at the end of a segment and a second time at the beginning of the following segment in the pangenome.
+These ending positions can violate the prefix-free property of the segment suffixes and, therefore, can be sorted incorrectly.
+Skipping through these positions ensures the prefix-free property for the rest of the suffixes and also avoids double reporting.
+This choice also plays nicely with the previous choice of appending $k$ sentinels during the construction of a prefix-free graph, as these positions will not get reported either.
+In conclusion, if the length of a current segment suffix is smaller or equal to the size of the trigger words $k$, we skip the row as in the previous cases.
 
+% stoped here
 Finaly, in the last case we report the positions.
 The last case will partition the suffix table into the blocks of the same suffixes.
 As an example consider the rows 20 and 21, which together for a single block.
