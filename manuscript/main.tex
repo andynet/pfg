@@ -32,15 +32,11 @@
 \title{Prefix-free graphs and suffix array construction in sublinear space}
 
 \author[1]{Andrej Baláž}[
-    orcid=0000-0001-0002-0003,
     email=andrejbalaz001@gmail.com,
 ]
 \cormark[1]
 
-\author[1]{Alessia Petescia}[
-    orcid=0000,
-    email=alessia@gmail.com,
-]
+\author[1]{Alessia Petescia}[]
 
 \address[1]{
     Department of Applied Informatics,
@@ -55,26 +51,20 @@
 %% The abstract is a short summary of the work to be presented in the
 %% article.
 \begin{abstract}
-  Recently, many graph structures for computational pangenomics were proposed.
-  In order to be useful, these graph structures need to implement several
-  operations such as efficient construction from many complete genomes,
-  mapping of short and long read.
-  These basic bioinformatics operations are well studied on sequential data,
-  and together with data structures such as suffix trees, suffix arrays and 
-  burrows wheeler transform allow high performance.
-  Attempts to implement these operations on graphs brings with it many complications
-  since these date structures are not easily obtainable for graphs.
-  In this work, we introduce prefix-free graphs, a pangenomic data structure
-  allowing to obtain the well known data structures from stringology in graph
-  settings, which in turn allows for many efficient operations on pangenomes.
+    A recent paradigm shift in bioinformatics from a single reference genome to a pangenome brought with it several graph structures.
+    These graph structures must implement operations, such as efficient construction from multiple genomes and read mapping.
+    Read mapping is a well-studied problem in sequential data, and, together with data structures such as suffix array and Burrows-Wheeler transform, allows for efficient computation.
+    Attempts to achieve comparatively high performance on graphs bring many complications since the common data structures on strings are not easily obtainable for graphs.
+    In this work, we introduce prefix-free graphs, a pangenomic data structure allowing us to obtain the well-known data structures from stringology in graph settings, allowing for many efficient operations on pangenomes.
 \end{abstract}
 
 %%
 %% Keywords. The author(s) should pick words that accurately describe
 %% the work being presented. Separate the keywords with commas.
 \begin{keywords}
-  pangenome \sep
-  suffix array
+    computational pangenomics \sep
+    graph pangenome \sep
+    suffix array
 \end{keywords}
 
 %%
