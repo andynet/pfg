@@ -1,29 +1,35 @@
 \section{Results}
-We implemented the prefix-free graphs package in rust programming language.
-There are two binary crates and one library crate included in the package.
-Binary crates serve the purpose of creating prefix-free graphs from FASTA and from GFA formats.
-Library crate provides an interface for working with the prefix-free graphs,
-mainly an iterator of suffix array in sublinear space and linear time.
+We implemented the prefix-free graphs as a Rust package.
+This package contains two binary crates and one library crate.
+Binary crates are executables that serve the purpose of creating prefix-free graphs from FASTA and GFA formats.
+The binary crates are named \texttt{fasta2pfg} and \texttt{gfa2pfg}, and their usage is as follows:
 
-The binary crates are fasta2pfg and gfa2pfg with usage:
 \begin{minted}{bash}
 fasta2pfg -t triggers.txt < pangenome.fna > pfg.gfa
 
 gfa2pfg -t triggers.txt < pangenome.gfa > pfg.gfa
 \end{minted}
 
-The library can be used from within rust programming language as follows:
+We compared the running time of the construction algorithm with several pangenome construction tools, namely with the PanGenome Graph Builder \cite{garrison2023building}, VG \cite{garrison2018variation}, and Minigraph-Cactus \cite{hickey2023pangenome}.
+For comparison, we used up to 256 SARS-CoV-2 sequences.
+These sequences have lengths of around 29.9 kbp and high nucleotide similarity.
+The resulting running times are shown in Table \ref{tab:comparison}.
+
+\input{comparison_table.tex}
+
+The library crate provides an interface for working with prefix-free graphs, mainly an iterator of a suffix array in sublinear space and linear time.
+The library can be used from within the Rust programming language as follows:
 
 \begin{minted}{rust}
 let pfg = PFG::load("pfg.gfa");
 
-for (i, sa_i) in pfg.iter().enumerate() {
-    println!("{}\t{}", i, sa_i);
+for (i, (sa_i, id_i, pos_i)) in pfg.iter().enumerate() {
+    println!("{}\t{}\t{}\t{}", i, sa_i, id_i, pos_i);
 }
 \end{minted}
 
-We compared the pangenome construction of several tools.
-
-\input{comparison_table.tex}
-
+In addition to the suffix array value, the iterator provides the segment ID and position values.
+These are useful for the computation of several related data structures.
+Similarly to \citet{2019boucher}, we can use them to compute the Burrows-Wheeler transform $\texttt{BWT}[i]$ by storing the preceding characters of each segment and then reporting the character at position $\texttt{pos}[i]-1$ of a segment $\texttt{id}[i]$.
+This computation allows for space-efficient construction of r-index \cite{gagie2020fully} similar to MONI implementation \cite{rossi2022moni}, space-efficient construction of Wheeler graphs similar in nature to the implementation in \citet{2022pfwg}, and with the use of predecessor queries, space-efficient construction of a tag array introduced in \citet{2022maria}.
 
