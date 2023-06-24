@@ -31,7 +31,12 @@ A sketch of the proof is shown in Figure \ref{fig:proof}.
 \begin{figure}
     \centering
     \includegraphics[width=0.6\linewidth]{images/prefixfree_proof.png}
-    \caption{Visual proof that the trigger words induce prefix-free segments.}
+    \caption{
+        A sketch of a visual proof that the trigger words induce prefix-free segments.
+        Suppose a segment is a prefix of another segment.
+        By construction, it ends with a trigger word.
+        This trigger word would be in the middle of another segment and would break it into two smaller segments.
+    }
     \label{fig:proof}
 \end{figure}
 
@@ -47,7 +52,10 @@ After the normalization, we get a prefix-free graph which can be directly repres
 \begin{figure}
     \centering
     \includegraphics[width=\linewidth]{images/pfg_gfa.v3.png}
-    \caption{Prefix-free graph in GFA format. Link lines omitted for brevity.}
+    \caption{
+        Prefix-free graph of the running example after normalization and its representation in GFA format.
+        Link lines omitted for brevity.
+    }
     \label{fig:gfa}
 \end{figure}
 

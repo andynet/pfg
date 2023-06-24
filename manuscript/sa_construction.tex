@@ -34,8 +34,8 @@ segment ID array and segment position array.
     \centering
     \includegraphics[width=\linewidth]{images/ids_and_positions.png}
     \caption{
-        Segment IDs and segment positions of a segment join. 
-        Permuting these according to the inverse permutation of a suffix array results in segment ID array and segment position array shown in Table \ref{tab:suffix}.
+        Segment join of segments from the running example, corresponding segment IDs, and positions.
+        Permuting IDs and positions according to the inverse permutation of the suffix array results in the segment ID array and the segment position array shown in Table \ref{tab:suffix}.
     }
     \label{fig:ids_and_positions}
 \end{figure}
@@ -63,7 +63,9 @@ Finally, we store the starts and ranks sorted by the rank values in the segment 
 \begin{figure}
     \centering
     \includegraphics[width=\linewidth]{images/path_join.png}
-    \caption{}
+    \caption{
+        Path join of paths from the running example and the corresponding starts and ranks. The pangenome and segments are shown above to clarify the meaning of the start values.
+    }
     \label{fig:path_join}
 \end{figure}
 
