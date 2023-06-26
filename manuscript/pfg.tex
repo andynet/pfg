@@ -4,7 +4,7 @@ CTPH uses a rolling hash to partition a string into substrings such that long re
 These substrings are then hashed with a traditional hash function and stored as a string signature.
 The signatures of several files are then compared to determine changes.
 
-In prefix-free graphs, we partition each sequence in a given pangenome into \emph{segment}s.
+In prefix-free graphs, we partition each sequence of a given pangenome into \emph{segment}s.
 These segments form nodes of the prefix-free graph, and their adjacencies in the original sequences constitute edges.
 The sequences are represented as \emph{path}s in the graph.
 
@@ -13,7 +13,7 @@ Similarly to CTPH, long repeated sequences will be partitioned the same way.
 Furthermore, no segment is a prefix of another, making a set of segments prefix-free.
 The second characteristic is crucial for connecting prefix-free graphs and suffix arrays, as will be presented in the next section.
 
-To create a prefix-free graph from a given pangenome $P$, we define a set of trigger words $T$, where each trigger is a string of length $k$.
+To create a prefix-free graph from a given pangenome $P$, we define a set of trigger words $T$, where each trigger word is a string of length $k$.
 For this set $T$, we build an Aho-Corasick automaton \cite{aho1975efficient}.
 Then, for each sequence in pangenome $P$, we append $k$ sentinel characters and iterate over such modified sequence, searching for matches with set $T$ using the automaton.
 Each time we encounter a trigger word, we recognize a new segment from the start of the previous trigger word to the end of the current trigger word.
