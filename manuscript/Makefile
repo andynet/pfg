@@ -2,7 +2,7 @@
 
 .PHONY: build
 build:
-	latexmk -pdf -shell-escape main.tex
+	latexmk -pdf -shell-escape ceurart.tex
 
 .PHONY: clean
 clean:
@@ -10,5 +10,5 @@ clean:
 
 .PHONY: purge
 purge:
-	rm main.pdf
+	rm ceurart.pdf
 
