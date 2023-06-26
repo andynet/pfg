@@ -11,7 +11,9 @@
 %%
 %% Minted listings support 
 %% Need pygment <http://pygments.org/> <http://pypi.python.org/pypi/Pygments>
-\usepackage{minted}
+\usepackage[finalizecache]{minted}
+%% \usepackage[frozencache]{minted}
+\usepackage{lmodern}
 %% auto break lines
 \setminted{breaklines=true}
 
@@ -72,11 +74,11 @@ In this work, we introduce prefix-free graphs, a novel pangenomic data structure
 %% information and builds the first part of the formatted document.
 \maketitle
 
-\input{introduction.tex}
-\input{pfg.tex}
-\input{sa_construction.tex}
-\input{results.tex}
-\input{conclusion.tex}
+\input{content/01_introduction.tex}
+\input{content/02_pfg.tex}
+\input{content/03_sa_construction.tex}
+\input{content/04_results.tex}
+\input{content/05_conclusion.tex}
 
 \section{Online Resources}
 The sources for the prefix-free graphs are available via
