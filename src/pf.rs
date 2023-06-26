@@ -75,7 +75,7 @@ impl PFData {
         let gfa = parser.parse_file(filename)
             .expect("Error parsing GFA file.");
 
-        let overlap = 1; // TODO determine_overlap();
+        let overlap = 2; // TODO determine_overlap();
         let segments: Vec<Vec<u8>> = parse_segments(&gfa.segments);
         let paths: Vec<Vec<usize>> = parse_paths(&gfa.paths);
 
