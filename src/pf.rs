@@ -109,7 +109,7 @@ impl PFData {
         }
         println!();
 
-        for id in 0..self.seg_len.len() {
+        for id in 0..self.seg_len.len()-1 {
             println!("{}\t{}\t{:?}\t{:?}", 
                 id, self.seg_len[id], self.seq_pos[id], self.rc_rank[id]
             );

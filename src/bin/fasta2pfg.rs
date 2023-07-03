@@ -13,7 +13,7 @@ struct Args {
     trigger_file: String,
 }
 
-fn main() { 
+fn main() {
     let args = Args::parse();
 
     let (trigs, trigs_size) = pf::load_trigs(&args.trigger_file);
