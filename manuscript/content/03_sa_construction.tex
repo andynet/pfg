@@ -1,6 +1,5 @@
 \section{Suffix array construction}
-A suffix array is a permutation of string positions which lexicographically
-sorts the suffixes of the string starting at that position.
+A suffix array is a permutation of string positions which lexicographically sorts the suffixes of the string starting at that position.
 It is an influential data structure with many applications in efficient string algorithms solving problems such as exact pattern matching, repeat finding, maximum exact match (MEM) finding, document retrieval and many more.
 
 There exist several algorithms for suffix array construction in linear time \cite{skew2003karkkainen,sais2009nong,saoverview2007puglisi} with several practical implementations \cite{louza2017inducing,libdivsufsort}.
@@ -17,7 +16,7 @@ First, we concatenate all the segments into a single string using a separator $\
 We will call this concatenation \emph{segment join}.
 An example of a segment join is in Figure \ref{fig:ids_and_positions}.
 
-Next, we calculate the segment join's suffix array and the longest common prefix (LCP) array.
+Next, we calculate the segment join's suffix array and the longest common prefix array \cite{landau2001linear,manzini2004two}.
 For both of these arrays, there exist algorithms with linear time and space complexity which we can use.
 We note that these linear complexities are proportional to the length of the segment join, which is usually much smaller than the original pangenome.
 
@@ -32,17 +31,15 @@ These arrays can be computed using an inverse permutation of a suffix array $\te
 
 To illustrate the procedure, consider the segment join of our running example from Figure \ref{fig:ids_and_positions}.
 Each position of the join can be assigned a segment ID and a position in the current segment by linearly scanning the segment join and incrementing the ID and position accordingly.
-Then, applying the inverse permutation of a suffix array to these arrays changes the order of computed values in correspondence to the sorted suffixes.
-The resulting suffix array, LCP array, segment ID array and segment positions array are stored in a \emph{suffix table} as shown in Table \ref{tab:suffix}.
+Then, applying the ISA to these arrays changes the order of computed values in correspondence to the sorted suffixes.
+The resulting suffix array $\texttt{SA}$, longest common prefix array $\texttt{LCP}$, segment ID array $\texttt{ID}$ and segment positions array $\texttt{pos}$ are stored in a \emph{suffix table} as shown in Table \ref{tab:suffix}.
 
 \begin{figure}
     \centering
     \includegraphics[width=\linewidth]{images/ids_and_positions.png}
     \caption{
-        Segment join of segments from the running example, corresponding segment IDs, and positions.
-        Permuting IDs and positions according to the inverse permutation of the suffix array results in the segment ID array and the segment position array shown in Table \ref{tab:suffix}.
+    Segment join of segments from the running example, corresponding segment IDs, and positions. Permuting IDs and positions according to the \texttt{ISA} results in the segment ID array \texttt{ID} and the segment position array \texttt{pos} shown in Table \ref{tab:suffix}. \label{fig:ids_and_positions}
     }
-    \label{fig:ids_and_positions}
 \end{figure}
 
 \input{content/table_suffix.tex}
@@ -50,8 +47,9 @@ The resulting suffix array, LCP array, segment ID array and segment positions ar
 \input{content/table_segment.tex}
 
 In the suffix table, one row can represent multiple positions of the pangenome.
+% These positions can be represented as a single integer coresponding to index in the concatenated representation of a pangenome.
 To identify these positions, we store some additional information in a \emph{segment table}.
-For each segment, we store its length, starting positions in the pangenome and ranks of the right contexts of these positions.
+For each segment of the prefix-free graph, we store its length, starting positions in the concatenated pangenome and ranks of the right contexts of these positions.
 To calculate the starting positions and the ranks of the right contexts, we use a \emph{path join}.
 Similarly to segment join, a path join is a concatenation with delimiters $\texttt{\#}$ and sentinel $\texttt{\$}$, but now constructed by concatenating the paths.
 An example of a path join for our running example is in Figure \ref{fig:path_join}.
@@ -68,26 +66,25 @@ Finally, we store the starts and ranks sorted by the rank values in the segment 
 
 \begin{figure}
     \centering
-    \includegraphics[width=\linewidth]{images/path_join.png}
+    \includegraphics[width=\linewidth]{images/path_join.png} %% TODO: change this
     \caption{
-        Path join of paths from the running example and the corresponding starts and ranks. The pangenome and segments are shown above to clarify the meaning of the start values.
+    Path join of paths from the running example and the corresponding starts and ranks. The concatenated pangenome and segments are shown above to clarify the meaning of the start values. \label{fig:path_join}
     }
-    \label{fig:path_join}
 \end{figure}
 
 \subsection{Iteration}
-With the previous tables stored in memory, we have all the necessary ingredients to generate the suffix array values.
+With the previous tables stored in memory, we have all the necessary ingredients to generate the suffix array value by value.
 
 Each row in the suffix table represents a suffix of a particular segment.
 There are four cases of what the first position of these suffixes can represent within the segments:
 \begin{itemize}
-    \item the sentinel
-    \item a separator
+    \item the sentinel $\texttt{\$}$
+    \item a separator $\texttt{\#}$
     \item a position within the last $k$ characters of a segment
     \item a position outside the last $k$ characters, separator and sentinel
 \end{itemize}
 
-Since the original pangenome has no corresponding position for the sentinel or separator characters, we can skip the first rows representing them.
+Since the pangenome has no corresponding position for the sentinel or separator characters, we can skip the first rows representing them.
 
 In the third case, the position is inside the trigger word or the sentinels appended during the graph construction.
 The positions inside the trigger words are represented twice in the suffix table, once at the end of a segment and a second time at the beginning of the following segment in the pangenome.
@@ -119,7 +116,7 @@ Given the row index $i$, this value can be calculated with Equation \ref{eq:sa_v
 As an example, consider the row $13$ in Table \ref{tab:suffix}, the first row yielding a SA value.
 Its segment ID is $0$, and from Table \ref{tab:segment}, we see only one occurrence of segment $0$ with starting position $9$ in the pangenome.
 The offset from the start of a segment $\texttt{pos}[13]$ is $0$.
-Summing these two values, we get the first value of a suffix array $9 + 0 = 9$ corresponding to the lexicographically smallest suffix $P[9..] = \texttt{ACACT}$.
+Summing these two values, we get the first value of a suffix array $9 + 0 = 9$ corresponding to the lexicographically smallest suffix of a concatenated pangenome $P[9..] = \texttt{ACACT}$.
 
 The second, slightly more complex case is a singleton block representing a segment suffix with several occurrences in the pangenome.
 In this case, we must report as many suffix array values as the number of occurrences.

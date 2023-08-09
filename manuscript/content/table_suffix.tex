@@ -1,9 +1,10 @@
 \begin{table*}
-    \caption{Suffix table}
-    \label{tab:suffix}
+    \caption{
+    Suffix table with the suffix array \texttt{SA}, longest common prefix array \texttt{LCP}, segment ID array \texttt{ID} and segment positions array \texttt{pos} of the running example. Suffixes of segment join from position \texttt{SA}[i] added for easier interpretation. Darker colours represent the suffix of the current segment. \label{tab:suffix}
+    }
     \begin{tabular}{rrrrrl}
         \toprule
-        i & SA[i] & LCP[i] & ID[i] & pos[i] & suffix\\
+        i & \texttt{SA}[i] & \texttt{LCP}[i] & \texttt{ID}[i] & \texttt{pos}[i] & segment join[\texttt{SA}[i]..] \\
         \midrule
          0  & 30 & -1 & 6 & 0 & \texttt{\textcolor{gray}{\$}}                                     \\
          1  & 29 &  0 & 5 & 5 & \texttt{\textcolor{gray}{\#\$}}                                   \\

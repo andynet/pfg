@@ -13,12 +13,12 @@ Similarly to CTPH, long repeated sequences will be partitioned the same way.
 Furthermore, no segment is a prefix of another, making a set of segments prefix-free.
 The second characteristic is crucial for connecting prefix-free graphs and suffix arrays, as will be presented in the next section.
 
-To create a prefix-free graph from a given pangenome $P$, we define a set of trigger words $T$, where each trigger word is a string of length $k$.
+To create a prefix-free graph from a given pangenome, we define a set of trigger words $T$, where each trigger word is a string of length $k$.
 For this set $T$, we build an Aho-Corasick automaton \cite{aho1975efficient}.
-Then, for each sequence in pangenome $P$, we append $k$ sentinel characters and iterate over such modified sequence, searching for matches with set $T$ using the automaton.
+Then, for each sequence in the pangenome, we append $k$ sentinel characters and iterate over such modified sequence, searching for matches with set $T$ using the automaton.
 Each time we encounter a trigger word, we recognize a new segment from the start of the previous trigger word to the end of the current trigger word.
 If the segment's sequence was not yet observed during the scan, we add it to the set of segments and assign a unique ID.
-Each time we append the corresponding ID to the path representing the original sequence. 
+Each time we append the corresponding ID to the path representing the original sequence.
 
 Two special cases happen during the sequence scan, one at the beginning, when no previous trigger word was encountered, and another at the end, when the last $k$ characters are sentinels.
 These are addressed by simply starting the first segment at the start of a sequence and ending the last at the sequence end.
@@ -43,9 +43,10 @@ A sketch of the proof is shown in Figure \ref{fig:proof}.
 After the previous steps, the set of segments and the list of paths already represent a prefix-free graph.
 However, to simplify the usage of prefix-free graphs, we recommend normalizing them.
 During the normalization, we sort segments lexicographically and change their IDs to correspond to the lexicographical ranks.
-This relabeling is then also propagated to paths accordingly. 
+This relabeling is then also propagated to paths accordingly.
+All construction steps can be performed in space proportional to the sum of segment lengths and the sum of path lengths, which is expected to be significantly smaller than the length of the pangenome.
 
-To illustrate the entire procedure, consider a set of sequences $P = \{$\texttt{CACGTACT}, \texttt{CACACT}, \texttt{CACGACT}$\}$ and a set of trigger words $T = \{$\texttt{AC}, \texttt{CG}$\}$.
+To illustrate the entire procedure, consider a set of sequences $\{$\texttt{CACGTACT}, \texttt{CACACT}, \texttt{CACGACT}$\}$ and a set of trigger words $T = \{$\texttt{AC}, \texttt{CG}$\}$.
 After the partitioning, we obtain a set of segments with IDs $\{$\texttt{0:CAC}, \texttt{1:ACG}, \texttt{2:CGTAC}, \texttt{3:ACT..}, \texttt{4:ACAC}, \texttt{5:CGAC}$\}$ and a list of paths \texttt{[[0,1,2,3], [0,4,3], [0,1,5,3]]}.
 After the normalization, we get a prefix-free graph which can be directly represented in GFA format as shown in Figure \ref{fig:gfa}.
 
