@@ -12,7 +12,7 @@ gfa2pfg -t triggers.txt < pangenome.gfa > pfg.gfa
 
 We compared the running time of the construction algorithm with several pangenome construction tools, namely with the PanGenome Graph Builder \cite{garrison2023building}, VG \cite{garrison2018variation}, and Minigraph-Cactus \cite{hickey2023pangenome}.
 For comparison, we used up to 256 SARS-CoV-2 sequences.
-These sequences have lengths of around 29.9 kbp and high nucleotide similarity.
+These sequences have lengths of around 30 kbp and high nucleotide similarity.
 We used stop codons (\texttt{TAA}, \texttt{TAG}, and \texttt{TGA}) as trigger words to construct prefix-free graphs.
 The resulting running times are shown in Table \ref{tab:comparison}.
 
