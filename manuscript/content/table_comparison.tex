@@ -14,10 +14,7 @@
         Wall clock times are measured by the built-in bash command \texttt{time} and rounded up to the nearest second.
         In addition to the measured times, \texttt{pggb} and \texttt{vg} need preprocessing of the pangenome.
         \texttt{pggb} requires the fasta file to be indexed.
-        This time was negligible in our case, but it can have a more significant impact when a more extensive dataset is considered.
         \texttt{vg} builds a pangenome from a VCF file or a multiple sequence alignment.
-        In both cases, acquiring this data requires time-consuming steps.
-        Furthermore, variant calling using a linear reference can introduce a reference bias.
         \label{tab:comparison}
     }
 \end{table*}
