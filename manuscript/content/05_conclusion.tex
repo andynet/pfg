@@ -1,10 +1,34 @@
 \section{Conclusion}
-We introduced the prefix-free graph as a standalone data structure in pangenomics and showed how to use it to build a suffix array of a pangenome in sublinear space.
-There are several possible directions for future research on prefix-free graphs.
-The first direction may be to answer the question of which additional stringological algorithms and data structures can use prefix-free graphs to improve their applicability to such vast and repetitive datasets as pangenomic data.
-Next, the choice of trigger words is, so far, mostly undiscovered territory.
-From a computational perspective, the set of trigger words minimizing the size of a resulting prefix-free graph is desirable since it would allow the analysis of larger datasets.
-Furthermore, trigger words offer great flexibility in the construction process.
-We hypothesize this flexibility could be used for the construction of prefix-free graphs based on biologically significant strings.
-In our experiments, we used the stop codon sequences as the trigger words, but other motives, such as different binding sites, recombination hotspots, or repetitive elements, are possible and could be used to capture particular biological phenomena.
+An increasing abundance of available genomic data leads to the need for new data structures to utilize all the contained information to its full potential.
+Pangenome graphs have been proposed as a solution capable of representing these datasets, exploiting the repetitiveness of a collection of related genomes for efficient storage while preserving and sometimes even highlighting the underlying variations.
+However, this shift in the bioinformatics field from linear sequences to pangenomic graphs brings challenges.
+
+The enormous sizes of pangenomes make the construction of pangenomic graphs nontrivial and often one of the major bottlenecks in the analysis.
+Current tools rely on well-known computational steps, such as all-against-all alignment \cite{garrison2023building}, multiple sequence alignment \cite{hickey2023pangenome}, or variant calling \cite{garrison2018variation}.
+All these steps are computationally expensive and do not scale well with rapidly growing datasets.
+Furthermore, variant calling relies on a linear reference, which can introduce a reference bias.
+
+Here, we introduced the prefix-free graph as a standalone data structure and showed how to build it from currently available pangenomic datasets.
+In comparison to the other tools, it offers several crucial advantages.
+The construction of prefix-free graphs does not require any alignment or variant calling.
+Instead, it avoids these expensive steps by employing a set of trigger words, which split the sequences according to their contexts.
+The time complexity of this construction is linear with respect to the input size, and the space complexity is sublinear, proportional only to the size of the resulting data structure.
+
+The novelty of prefix-free graphs brings several possible directions for future research, with the two main directions being the connection of prefix-free graphs to stringology and the choice of trigger words.
+In Chapter 3, we showed how to use prefix-free graphs to build a suffix array of a pangenome in sublinear space.
+Suffix arrays are at the core of many efficient and well-established string algorithms in bioinformatics, such as read mapping and pattern matching.
+We expect this connection will facilitate the development of similar algorithms on pangenomic datasets, supporting the paradigm shift.
+This direction will require exploring which additional string algorithms can use prefix-free graphs to improve their applicability to these vast and repetitive datasets.
+An exciting attempt may be to map reads to prefix-free graphs in a similar fashion as the popular tool BWA \cite{li2009fast} maps reads to a linear reference.
+
+The second direction, the choice of trigger words, is, so far, mostly undiscovered territory.
+Trigger words offer great flexibility in the construction process, so a better understanding of their selection is crucial for prefix-free graphs.
+From the computational perspective, a set of trigger words minimizing the size of the resulting graph is desirable since it would allow the analysis of larger datasets.
+On the other hand, the construction flexibility could be used to create prefix-free graphs based on biologically significant strings.
+In our experiments, we used stop codon sequences as the trigger words.
+However, experiments with other motives, such as different binding sites, recombination hotspots, or repetitive elements, could illuminate the possibility of capturing particular biological phenomena with prefix-free graphs.
+Moreover, integrating the strand information in the graph construction may be beneficial for further reducing the graph size and capturing biological phenomena such as inversion.
+This integration could be achieved by considering both the forward and reverse complement of the trigger words.
+
+We believe the characteristics of prefix-free graphs are highly valueable and will have a significant impact when dealing with massive datasets, moving us closer to the ultimate goal of computational pangenomics.
 
