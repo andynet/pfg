@@ -1,4 +1,6 @@
 use bio::data_structures::suffix_array::lcp as lcp_array;
+use bio::data_structures::suffix_array::suffix_array;
+use bio::data_structures::suffix_array::suffix_array_int;
 use gfa::gfa::GFA;
 use std::io::Write;
 use std::io;
@@ -7,9 +9,9 @@ use std::collections::HashMap;
 use gfa::gfa::Path;
 use gfa::gfa::Segment;
 use gfa::parser::GFAParser;
-use crate::arrays::SuffixArray;
 use std::ops::Add;
 use std::str;
+
 use crate::reverse_complement;
 
 /// Data required to iterate through suffix array in sublinear space
@@ -45,7 +47,7 @@ impl PFData {
     pub fn new(segments: &[Vec<u8>], paths: &[Vec<usize>], overlap: usize) -> Self {
         let segment_join = join(segments);
 
-        let sa  = SuffixArray::create(&*segment_join);
+        let sa  = suffix_array(&segment_join);
         let lcp = lcp_array(&segment_join, &sa).decompress();
         let isa = permutation_invert(&sa);
         let id  = get_node_ids(&segment_join, &isa);
@@ -268,7 +270,7 @@ fn get_sequence_position(path_join: &[usize], len: &[usize], overlap: usize) -> 
 fn get_right_context_rank(path_join: &[usize], size: usize) -> Vec<Vec<usize>> {
     let mut result = vec![Vec::new(); size];
 
-    let sa = SuffixArray::create(&path_join[..]);
+    let sa = suffix_array_int(&path_join);
     let isa = permutation_invert(&sa);
 
     for (i, id) in path_join.iter().enumerate() {

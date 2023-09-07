@@ -1,4 +1,3 @@
-pub mod arrays;
 pub mod naive;
 pub mod pf;
 
