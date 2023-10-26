@@ -84,6 +84,29 @@ impl PFData {
         Self::new(&segments, &paths, overlap)
     }
 
+    pub fn from_graph(gfa: &str, triggers: &str) -> Self {
+        let parser: GFAParser<usize, ()> = GFAParser::new();
+        let gfa = parser.parse_file(gfa)
+            .expect("Error parsing GFA file.");
+
+        let (trigs, trigs_size) = load_trigs(&triggers);
+        let triggers = get_triggers(&trigs, trigs_size);
+
+        let mut segments = HashMap::new();
+        let mut paths = Vec::new();
+
+        for path in &gfa.paths {
+            let mut seq = reconstruct_path(path, &gfa);
+            let v = vec![b'.'; trigs_size];
+            seq.extend_from_slice(&v);
+            split_prefix_free(&seq, &triggers, &mut segments, &mut paths);
+        }
+
+        let (segments, paths) = normalize(segments, paths);
+
+        return PFData::new(&segments, &paths, trigs_size);
+    }
+
     pub fn iter(&self) -> PFDataIterator {
         let block = Block::get_block_at(self, 0)
             .expect("No block found.");

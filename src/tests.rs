@@ -26,8 +26,8 @@ fn show_pfdata() {
 
 #[test]
 fn can_load_arbitrary_graph() {
-    // let pfdata = PFData::from_graph(
-    //     "data/pftag/test_arbitrary.gfa",
-    //     "data/pftag/triggers.txt"
-    // );
+    let pfdata = PFData::from_graph(
+        "example/pangenome.gfa", "example/triggers.txt"
+    );
+    pfdata.print();
 }
