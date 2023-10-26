@@ -77,9 +77,9 @@ impl PFData {
         let gfa = parser.parse_file(filename)
             .expect("Error parsing GFA file.");
 
-        let overlap = 2; // TODO determine_overlap();
         let segments: Vec<Vec<u8>> = parse_segments(&gfa.segments);
         let paths: Vec<Vec<usize>> = parse_paths(&gfa.paths);
+        let overlap = determine_overlap(&segments);
 
         Self::new(&segments, &paths, overlap)
     }
@@ -209,6 +209,18 @@ fn parse_paths(paths: &[Path<usize, ()>]) -> Vec<Vec<usize>> {
         result.push(p);
     }
     return result;
+}
+
+fn determine_overlap(segments: &[Vec<u8>]) -> usize {
+    for segment in segments {
+        let n = segment.len();
+        if segment[n-1] == b'.' {
+            let mut i = 1;
+            while segment[n-1-i] == b'.' { i += 1; }
+            return i;
+        }
+    }
+    panic!("Graph does not have any overlaps.");
 }
 
 fn join<T>(slice: &[Vec<T>]) -> Vec<T> 

@@ -10,6 +10,15 @@ fn iter_works() {
 }
 
 #[test]
+fn iter_works_for_pfg_with_overlaps_1() {
+    let pfdata = PFData::from_pfgraph("example/pfg1.gfa");
+
+    for (sa, id, pos) in pfdata.iter() {
+        println!("{sa}\t{id}\t{pos}");
+    }
+}
+
+#[test]
 fn show_pfdata() {
     let pfdata = PFData::from_pfgraph("example/pfg.gfa");
     pfdata.print();
