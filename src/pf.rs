@@ -347,26 +347,6 @@ fn argmin(data: &[usize]) -> usize {
     return min_pos;
 }
 
-// pub fn get_triggers(trigs: &[u8], size: usize) -> Vec<&[u8]> {
-//     let mut result = Vec::new();
-//     for i in (0..trigs.len()).step_by(size+1) {
-//         result.push(&trigs[i..i+size]);
-//     }
-//     return result;
-// }
-
-// pub fn load_trigs(filename: &str) -> (Vec<u8>, usize) {
-//     let trigs = fs::read_to_string(filename)
-//         .expect("Unable to read the triggers file")
-//         .trim().as_bytes().to_owned();
-// 
-//     let trigs_size = match trigs.iter().position(|&x| x == b'\n') {
-//         None    => { trigs.len() },
-//         Some(x) => { x }
-//     };
-//     return (trigs, trigs_size);
-// }
-
 pub fn normalize(segments: HashMap<Vec<u8>, usize>, mut paths: Vec<Vec<usize>>)
     -> (Vec<Vec<u8>>, Vec<Vec<usize>>) 
 {
@@ -475,7 +455,10 @@ pub fn print_gfa<T: Write>(
     return Ok(());
 }
 
-pub fn load_trigs(filename: &str) -> Vec<Vec<u8>> {
+pub fn load_trigs<P>(filename: &P) -> Vec<Vec<u8>> 
+where
+    P: AsRef<path::Path> + ?Sized
+{
     let content = fs::read_to_string(filename)
         .expect("Unable to read the triggers file")
         .trim().as_bytes().to_owned();
