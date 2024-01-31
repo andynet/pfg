@@ -11,6 +11,7 @@ use gfa::gfa::Segment;
 use gfa::parser::GFAParser;
 use std::ops::Add;
 use std::str;
+use std::path;
 
 use crate::reverse_complement;
 
@@ -84,27 +85,26 @@ impl PFData {
         Self::new(&segments, &paths, overlap)
     }
 
-    pub fn from_graph(gfa: &str, triggers: &str) -> Self {
+    pub fn from_graph<P>(gfa: &P, trigs: &[Vec<u8>]) -> Self 
+    where
+        P: AsRef<path::Path> + ?Sized
+    {
         let parser: GFAParser<usize, ()> = GFAParser::new();
-        let gfa = parser.parse_file(gfa)
-            .expect("Error parsing GFA file.");
-
-        let (trigs, trigs_size) = load_trigs(&triggers);
-        let triggers = get_triggers(&trigs, trigs_size);
+        let gfa = parser.parse_file(gfa).expect("Error parsing GFA file.");
 
         let mut segments = HashMap::new();
         let mut paths = Vec::new();
 
+        let t_len = trigs.first().unwrap().len();
         for path in &gfa.paths {
             let mut seq = reconstruct_path(path, &gfa);
-            let v = vec![b'.'; trigs_size];
+            let v = vec![b'.'; t_len];
             seq.extend_from_slice(&v);
-            split_prefix_free(&seq, &triggers, &mut segments, &mut paths);
+            split_prefix_free(&seq, trigs, &mut segments, &mut paths);
         }
-
         let (segments, paths) = normalize(segments, paths);
 
-        return PFData::new(&segments, &paths, trigs_size);
+        return PFData::new(&segments, &paths, t_len);
     }
 
     pub fn iter(&self) -> PFDataIterator {
@@ -150,9 +150,9 @@ impl<'a> Iterator for PFDataIterator<'a> {
         let block = &mut self.block;
         if let Some(x) = block.next() { return Some(x); }
 
-        let tmp = Block::get_block_at(self.data, block.end);
-        if tmp.is_none() { return None; }
-        *block = tmp.unwrap();
+        let b = Block::get_block_at(self.data, block.end);
+        let _tmp2 = b.as_ref()?;
+        *block = b.unwrap();
         return block.next();
     }
 }
@@ -305,7 +305,7 @@ fn get_sequence_position(path_join: &[usize], len: &[usize], overlap: usize) -> 
 fn get_right_context_rank(path_join: &[usize], size: usize) -> Vec<Vec<usize>> {
     let mut result = vec![Vec::new(); size];
 
-    let sa = suffix_array_int(&path_join);
+    let sa = suffix_array_int(path_join);
     let isa = permutation_invert(&sa);
 
     for (i, id) in path_join.iter().enumerate() {
@@ -347,26 +347,25 @@ fn argmin(data: &[usize]) -> usize {
     return min_pos;
 }
 
-pub fn get_triggers(trigs: &[u8], size: usize) -> Vec<&[u8]> {
-    let mut result = Vec::new();
-    for i in (0..trigs.len()).step_by(size+1) {
-        result.push(&trigs[i..i+size]);
-    }
-    return result;
-}
+// pub fn get_triggers(trigs: &[u8], size: usize) -> Vec<&[u8]> {
+//     let mut result = Vec::new();
+//     for i in (0..trigs.len()).step_by(size+1) {
+//         result.push(&trigs[i..i+size]);
+//     }
+//     return result;
+// }
 
-pub fn load_trigs(filename: &str) -> (Vec<u8>, usize) {
-    let trigs = fs::read_to_string(filename)
-        .expect("Unable to read the triggers file")
-        .trim().as_bytes().to_owned();
-
-    let trigs_size;
-    match trigs.iter().position(|&x| x == b'\n') {
-        None    => { trigs_size = trigs.len(); },
-        Some(x) => { trigs_size = x; }
-    }
-    return (trigs, trigs_size);
-}
+// pub fn load_trigs(filename: &str) -> (Vec<u8>, usize) {
+//     let trigs = fs::read_to_string(filename)
+//         .expect("Unable to read the triggers file")
+//         .trim().as_bytes().to_owned();
+// 
+//     let trigs_size = match trigs.iter().position(|&x| x == b'\n') {
+//         None    => { trigs.len() },
+//         Some(x) => { x }
+//     };
+//     return (trigs, trigs_size);
+// }
 
 pub fn normalize(segments: HashMap<Vec<u8>, usize>, mut paths: Vec<Vec<usize>>)
     -> (Vec<Vec<u8>>, Vec<Vec<usize>>) 
@@ -403,8 +402,8 @@ fn add_segment(
 }
 
 pub fn split_prefix_free(
-         seq: &[u8],    // must end with sentinel
-    triggers: &[&[u8]], // must be non-empty
+         seq: &[u8],        // must end with sentinel
+    triggers: &[Vec<u8>],   // must be non-empty
     segments: &mut HashMap<Vec<u8>, usize>,
        paths: &mut Vec<Vec<usize>>
 ) {
@@ -414,7 +413,7 @@ pub fn split_prefix_free(
     let mut path = Vec::new();
     let mut i = 0;
     for j in 1..n-k {
-        if triggers.contains(&&seq[j..j+k]) {
+        if triggers.contains(&seq[j..j+k].to_owned()) {
             let segment_seq = &seq[i..j+k];
             add_segment(segment_seq, segments, &mut path);
             i = j;
@@ -444,8 +443,8 @@ pub fn reconstruct_path(path: &Path<usize, ()>, gfa: &GFA<usize, ()>) -> Vec<u8>
     for (id, sign) in p {
         let sequence = map.get(&id).expect("Segment not found");
         match sign {
-            b'+' => { result.extend_from_slice(&sequence) },
-            b'-' => { result.extend_from_slice(&reverse_complement(&sequence)) },
+            b'+' => { result.extend_from_slice(sequence) },
+            b'-' => { result.extend_from_slice(&reverse_complement(sequence)) },
             x    => { panic!("Unexpected direction {x}") }
         }
     } 
@@ -453,8 +452,8 @@ pub fn reconstruct_path(path: &Path<usize, ()>, gfa: &GFA<usize, ()>) -> Vec<u8>
 }
 
 pub fn print_gfa<T: Write>(
-      segments: &Vec<Vec<u8>>,
-         paths: &Vec<Vec<usize>>,
+      segments: &[Vec<u8>],
+         paths: &[Vec<usize>],
              k: usize,  // size of the trigger words
     mut output: T
 ) -> io::Result<()> {
@@ -474,6 +473,28 @@ pub fn print_gfa<T: Write>(
         }
     }
     return Ok(());
+}
+
+pub fn load_trigs(filename: &str) -> Vec<Vec<u8>> {
+    let content = fs::read_to_string(filename)
+        .expect("Unable to read the triggers file")
+        .trim().as_bytes().to_owned();
+
+    content.split(|x| *x == b'\n').map(|x| x.to_vec()).collect()
+}
+
+#[test]
+fn test_from_graph() {
+    let trigs: Vec<Vec<u8>> = vec![b"AC".to_vec(), b"CG".to_vec()];
+    let pfdata1 = PFData::from_graph("example/pangenome.gfa", &trigs);
+
+    let triggers = load_trigs("example/triggers.txt");
+    let pfdata2 = PFData::from_graph("example/pangenome.gfa", &triggers);
+
+    use std::iter::zip;
+    for (x1, x2) in zip(pfdata1.iter(), pfdata2.iter()) {
+        assert_eq!(x1, x2);
+    }
 }
 
 #[cfg(test)]

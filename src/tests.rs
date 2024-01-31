@@ -1,4 +1,5 @@
 use crate::pf::PFData;
+use crate::pf::load_trigs;
 
 #[test]
 fn iter_works() {
@@ -26,8 +27,7 @@ fn show_pfdata() {
 
 #[test]
 fn can_load_arbitrary_graph() {
-    let pfdata = PFData::from_graph(
-        "example/pangenome.gfa", "example/triggers.txt"
-    );
+    let trigs = load_trigs("example/triggers.txt"); 
+    let pfdata = PFData::from_graph("example/pangenome.gfa", &trigs);
     pfdata.print();
 }

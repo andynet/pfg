@@ -16,8 +16,8 @@ struct Args {
 fn main() {
     let args = Args::parse();
 
-    let (trigs, trigs_size) = pf::load_trigs(&args.trigger_file);
-    let triggers = pf::get_triggers(&trigs, trigs_size);
+    let trigs = pf::load_trigs(&args.trigger_file);
+    let t_len = trigs.first().unwrap().len();
 
     let mut segments = HashMap::new();
     let mut paths = Vec::new();
@@ -25,14 +25,14 @@ fn main() {
     let mut records = fasta::Reader::new(stdin()).records();
     while let Some(Ok(record)) = records.next() {
         let mut seq = record.seq().to_owned();
-        let v = vec![b'.'; trigs_size];
+        let v = vec![b'.'; t_len];
         seq.extend_from_slice(&v);
-        pf::split_prefix_free(&seq, &triggers, &mut segments, &mut paths);
+        pf::split_prefix_free(&seq, &trigs, &mut segments, &mut paths);
     }
 
     let (segments, paths) = pf::normalize(segments, paths);
 
-    pf::print_gfa(&segments, &paths, trigs_size, stdout())
+    pf::print_gfa(&segments, &paths, t_len, stdout())
         .expect("Error writting GFA");
 }
 
@@ -43,7 +43,7 @@ mod tests {
 
     #[test]
     fn test_only_prefix_free() {
-        let triggers: Vec<&[u8]> = vec![b"T"];
+        let triggers: Vec<Vec<u8>> = vec![b"T".to_vec()];
         let k = 1;
         let seq1 = b"ATCTGTTAATG$";
         let seq2 = b"AACGTGTACGTACGAAC$";
