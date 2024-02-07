@@ -2,6 +2,8 @@ use bio::data_structures::suffix_array::lcp as lcp_array;
 use bio::data_structures::suffix_array::suffix_array;
 use bio::data_structures::suffix_array::suffix_array_int;
 use gfa::gfa::GFA;
+use bio::io::fasta;
+use std::io::{Read, BufRead};
 use std::io::Write;
 use std::io;
 use std::fs;
@@ -431,30 +433,6 @@ pub fn reconstruct_path(path: &Path<usize, ()>, gfa: &GFA<usize, ()>) -> Vec<u8>
     return result;
 }
 
-pub fn print_gfa<T: Write>(
-      segments: &[Vec<u8>],
-         paths: &[Vec<usize>],
-             k: usize,  // size of the trigger words
-    mut output: T
-) -> io::Result<()> {
-
-    writeln!(output, "H\tVN:Z:1.1")?;
-    for (id, seq) in segments.iter().enumerate() {
-        let seq = str::from_utf8(seq).expect("Cannot convert seq to UTF8");
-        writeln!(output, "S\t{}\t{}", id, seq)?;
-    }
-
-    for (i, path) in paths.iter().enumerate() {
-        let path_str = path.iter().map(|x| format!("{}+", x)).collect::<Vec<_>>().join(",");
-        writeln!(output, "P\t{}\t{}\t*", i, path_str)?;
-
-        for j in 0..path.len()-1 {
-            writeln!(output, "L\t{}\t+\t{}\t+\t{}M", path[j], path[j+1], k)?;
-        }
-    }
-    return Ok(());
-}
-
 pub fn load_trigs<P>(filename: &P) -> Vec<Vec<u8>> 
 where
     P: AsRef<path::Path> + ?Sized
@@ -477,6 +455,66 @@ fn test_from_graph() {
     use std::iter::zip;
     for (x1, x2) in zip(pfdata1.iter(), pfdata2.iter()) {
         assert_eq!(x1, x2);
+    }
+}
+
+pub struct PFGraph {
+    overlap: usize,
+    segments: Vec<Vec<u8>>,
+    paths: Vec<Vec<usize>>,
+}
+
+impl PFGraph {
+    pub fn from_pfg(filename: &str) -> Self {
+        let parser: GFAParser<usize, ()> = GFAParser::new();
+        let gfa = parser.parse_file(filename).expect("Error parsing GFA file.");
+
+        let paths: Vec<Vec<usize>> = parse_paths(&gfa.paths);
+        let segments: Vec<Vec<u8>> = parse_segments(&gfa.segments);
+        let overlap = determine_overlap(&segments);
+
+        Self { overlap, segments, paths }
+    }
+
+    pub fn from_fasta<T: Read + BufRead>(file: T, triggers: &[Vec<u8>]) -> Self {
+        let overlap = triggers.first().unwrap().len();
+        let mut segments = HashMap::new();
+        let mut paths = Vec::new();
+
+        let mut records = fasta::Reader::new(file).records();
+        while let Some(Ok(record)) = records.next() {
+            let mut seq = record.seq().to_owned();
+            let v = vec![b'.'; overlap];
+            seq.extend_from_slice(&v);
+            split_prefix_free(&seq, triggers, &mut segments, &mut paths);
+        }
+        let (segments, paths) = normalize(segments, paths);
+        Self { overlap, segments, paths }
+    }
+
+    pub fn path_size(&self) -> usize { self.paths.iter().map(|x| x.len()).sum() }
+    pub fn segment_size(&self) -> usize { self.segments.iter().map(|x| x.len()).sum() }
+
+    pub fn write_gfa(&self, mut output: impl Write) -> io::Result<()> {
+        writeln!(output, "H\tVN:Z:1.1")?;
+        for (id, seq) in self.segments.iter().enumerate() {
+            let seq = str::from_utf8(seq).expect("Cannot convert seq to UTF8");
+            writeln!(output, "S\t{}\t{}", id, seq)?;
+        }
+
+        for (i, path) in self.paths.iter().enumerate() {
+            let path_str = path.iter().map(|x| format!("{}+", x))
+                .collect::<Vec<_>>().join(",");
+            writeln!(output, "P\t{}\t{}\t*", i, path_str)?;
+
+            for j in 0..path.len()-1 {
+                writeln!(
+                    output, "L\t{}\t+\t{}\t+\t{}M",
+                    path[j], path[j+1], self.overlap
+                )?;
+            }
+        }
+        return Ok(());
     }
 }
 
