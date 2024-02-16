@@ -99,7 +99,7 @@ impl PFData {
 
         let t_len = trigs.first().unwrap().len();
         for path in &gfa.paths {
-            let mut seq = reconstruct_path(path, &gfa);
+            let (mut seq, _) = reconstruct_path(path, &gfa);
             let v = vec![b'.'; t_len];
             seq.extend_from_slice(&v);
             split_prefix_free(&seq, trigs, &mut segments, &mut paths);
@@ -411,9 +411,9 @@ fn into_path_step(step: &str) -> (usize, u8) {
     return (id, sign);
 }
 
-pub fn reconstruct_path(path: &Path<usize, ()>, gfa: &GFA<usize, ()>) -> Vec<u8> {
-    let mut result = Vec::new();
-
+pub fn reconstruct_path(path: &Path<usize, ()>, gfa: &GFA<usize, ()>)
+    -> (Vec<u8>, Vec<usize>)
+{
     let mut map = HashMap::new();
     for segment in &gfa.segments {
         map.insert(segment.name, segment.sequence.clone());
@@ -422,15 +422,22 @@ pub fn reconstruct_path(path: &Path<usize, ()>, gfa: &GFA<usize, ()>) -> Vec<u8>
     let p = str::from_utf8(&path.segment_names).unwrap();
     let p: Vec<_> = p.split(',').map(into_path_step).collect();
 
+    let mut seq = Vec::new();
+    let mut brk = Vec::new();
+
+    let mut b = 0;
     for (id, sign) in p {
         let sequence = map.get(&id).expect("Segment not found");
+        b += sequence.len();
+        brk.push(b);
         match sign {
-            b'+' => { result.extend_from_slice(sequence) },
-            b'-' => { result.extend_from_slice(&reverse_complement(sequence)) },
+            b'+' => { seq.extend_from_slice(sequence) },
+            b'-' => { seq.extend_from_slice(&reverse_complement(sequence)) },
             x    => { panic!("Unexpected direction {x}") }
         }
-    } 
-    return result;
+    }
+    // brk.pop(); // last break is end of sequence and does not start segment
+    return (seq, brk);
 }
 
 pub fn load_trigs<P>(filename: &P) -> Vec<Vec<u8>> 
