@@ -18,21 +18,28 @@ fn main() {
     let args = Args::parse();
 
     let parser: GFAParser<usize, ()> = GFAParser::new();
-    let graph = parser.parse_file(&args.arb_gfa).expect("Error parsing GFA file.");
+    let graph = parser.parse_file(args.arb_gfa).expect("Error parsing GFA file.");
 
-    let mut k = 1;
-    while ! is_pfg(&graph, k) {
-        println!("For {} {} is not PFG.", k, args.arb_gfa);
-        k *= 2;
+    for k in 1..65 {
+        let (set, new_breaks) = is_pfg(&graph, k);
+        println!("For {k} we only need to add {new_breaks} new breaks to make it PFG.");
+        println!("Triggers: {} {:?}", set.len(), set);
+
     }
-    println!("For {} {} is a PFG", k, args.arb_gfa);
-    // let k = binary_search(range, is_pfg, args.arb_gfa);
 }
 
-fn is_pfg(graph: &GFA<usize, ()>, k: usize) -> bool {
+fn is_pfg(graph: &GFA<usize, ()>, k: usize) -> (HashSet<Vec<u8>>, usize) {
     let mut triggers = HashSet::new();
-    let mut noopers = HashSet::new();
-    let mut num_breaks = 0;
+    let mut new_breaks = 0;
+
+    for p in &graph.paths {
+        let (mut seq, breaks) = reconstruct_path(p, graph);
+        let v = vec![b'.'; k];
+        seq.extend_from_slice(&v);
+        for i in breaks {
+            triggers.insert(seq[i..i+k].to_vec());
+        }
+    }
 
     for p in &graph.paths {
         let (mut seq, breaks) = reconstruct_path(p, graph);
@@ -40,41 +47,25 @@ fn is_pfg(graph: &GFA<usize, ()>, k: usize) -> bool {
         seq.extend_from_slice(&v);
         let mut j = 0;
         for i in 0..seq.len()-k {
-            let brk = {
+            let is_brk = {
                 if i == breaks[j] { j+=1; true }
                 else { false }
             };
-            let kmer = seq[i..i+k].to_vec();
 
-            let trig = triggers.get(&kmer);
-            let noop = noopers.get(&kmer);
+            let is_trig = {
+                let kmer = seq[i..i+k].to_vec();
+                triggers.get(&kmer).is_some()
+            };
 
-            match (trig, noop) {
-                (None, None) => {
-                    if brk { triggers.insert(kmer); }
-                    else { noopers.insert(kmer); }
-                },
-                (Some(x), None) => { if ! brk {
-                    // println!("Should be noop: {:?}", x);
-                    // println!("Trig: {:?}", triggers);
-                    // println!("Noop: {:?}", noopers);
-                    // return false; 
-                    println!("Introducing a break.");
-                    num_breaks += 1;
-                } },
-                (None, Some(x)) => { if   brk {
-                    println!("Should be in trig: {:?}", x);
-                    println!("Trig: {:?}", triggers);
-                    println!("Noop: {:?}", noopers);
-                    return false;
-                } },
-                (Some(_), Some(_)) => { unreachable!() }
+            match (is_brk, is_trig) {
+                (true, true) => { /* good */ },
+                (true, false) => { unreachable!() },
+                (false, true) => { new_breaks += 1; },
+                (false, false) => { /* good */ },
             }
         }
     }
-    println!("Trig: {} {:?}", triggers.len(), triggers);
-    println!("Introduced {} breaks.", num_breaks);
-    return true;
+    return (triggers, new_breaks);
 }
 
 #[test]
@@ -83,8 +74,8 @@ fn test_is_pfg() {
     let parser: GFAParser<usize, ()> = GFAParser::new();
     let graph = parser.parse_file(filename).expect("Error parsing GFA file.");
 
-    assert!(!is_pfg(&graph, 1));
-    assert!(is_pfg(&graph, 2));
+    // assert!(!is_pfg(&graph, 1));
+    // assert!(is_pfg(&graph, 2));
 }
 
 #[test]

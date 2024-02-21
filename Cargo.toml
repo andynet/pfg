@@ -7,4 +7,5 @@ edition = "2021"
 gfa = "0.10.1"
 bio = { git = "https://github.com/andynet/rust-bio", branch = "int_suffix_array" }
 clap = { version = "4.3.4", features = ["derive"] }
+counter = "0.5.7"
 
