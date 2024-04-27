@@ -3,15 +3,20 @@ use gfa::parser::GFAParser;
 use gfa::gfa::GFA;
 use pfg::pf::reconstruct_path;
 use std::collections::HashSet;
+use std::fs::File;
+use std::io::Write;
 use std::str;
 
 /// Build prefix-free graph
 #[derive(Parser, Debug)]
 #[command(author, version, about)]
 struct Args {
-    ///
+    /// arbitrary graph
     #[arg(short)]
     arb_gfa: String,
+
+    #[arg(short)]
+    output: String,
 }
 
 fn main() {
@@ -20,18 +25,24 @@ fn main() {
     let parser: GFAParser<usize, ()> = GFAParser::new();
     let graph = parser.parse_file(args.arb_gfa).expect("Error parsing GFA file.");
 
-    for k in 1..65 {
-        let (set, new_breaks) = is_pfg(&graph, k);
-        println!("For {k} we only need to add {new_breaks} new breaks to make it PFG.");
-        println!("Triggers: {} {:?}", set.len(), set);
+    for k in (4..64).step_by(4) {
+        let triggers = get_triggers(&graph, k);
+        let (all_breaks, new_breaks) = calculate_breaks(&graph, k, &triggers);
+        println!(
+            "k={k}\n\tall_breaks={all_breaks}\n\tnew_breaks={new_breaks}\n\tpfg_size=???"
+        );
 
+        let output_file = args.output.clone() + &format!("_{:02}.txt", k);
+        let mut out = File::create(output_file).expect("Cannot open file.");
+        for trig in triggers {
+            writeln!(out, "{}", &str::from_utf8(&trig).unwrap())
+                .expect("Failed to write trigger words.");
+        }
     }
 }
 
-fn is_pfg(graph: &GFA<usize, ()>, k: usize) -> (HashSet<Vec<u8>>, usize) {
+fn get_triggers(graph: &GFA<usize, ()>, k: usize) -> HashSet<Vec<u8>> {
     let mut triggers = HashSet::new();
-    let mut new_breaks = 0;
-
     for p in &graph.paths {
         let (mut seq, breaks) = reconstruct_path(p, graph);
         let v = vec![b'.'; k];
@@ -40,7 +51,14 @@ fn is_pfg(graph: &GFA<usize, ()>, k: usize) -> (HashSet<Vec<u8>>, usize) {
             triggers.insert(seq[i..i+k].to_vec());
         }
     }
+    return triggers;
+}
 
+fn calculate_breaks(graph: &GFA<usize, ()>, k: usize, triggers: &HashSet<Vec<u8>>)
+    -> (usize, usize)
+{
+    let mut all_breaks = 0;
+    let mut new_breaks = 0;
     for p in &graph.paths {
         let (mut seq, breaks) = reconstruct_path(p, graph);
         let v = vec![b'.'; k];
@@ -58,24 +76,14 @@ fn is_pfg(graph: &GFA<usize, ()>, k: usize) -> (HashSet<Vec<u8>>, usize) {
             };
 
             match (is_brk, is_trig) {
-                (true, true) => { /* good */ },
+                (true, true) => { all_breaks += 1; },
                 (true, false) => { unreachable!() },
-                (false, true) => { new_breaks += 1; },
+                (false, true) => { all_breaks += 1; new_breaks += 1; },
                 (false, false) => { /* good */ },
             }
         }
     }
-    return (triggers, new_breaks);
-}
-
-#[test]
-fn test_is_pfg() {
-    let filename = "./example/pangenome.gfa";
-    let parser: GFAParser<usize, ()> = GFAParser::new();
-    let graph = parser.parse_file(filename).expect("Error parsing GFA file.");
-
-    // assert!(!is_pfg(&graph, 1));
-    // assert!(is_pfg(&graph, 2));
+    return (all_breaks, new_breaks);
 }
 
 #[test]
