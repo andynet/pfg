@@ -559,6 +559,29 @@ impl PFGraph {
         Self { overlap, segments, paths }
     }
 
+    pub fn from_gfa<T: Read + BufRead>(file: T, triggers: &[Vec<u8>]) -> PFGraph {
+        let overlap = triggers.first().unwrap().len();
+        let mut segments = HashMap::new();
+        let mut paths = Vec::new();
+
+        let graph = {
+            // GFAParser does not implement reading directly from stdin :-(
+            let lines: Vec<_> = file.lines().map(|line| line.expect("Cannot read line")).collect();
+            let it = lines.iter().map(|line| line.as_bytes());
+            let parser: GFAParser<usize, ()> = GFAParser::new();
+            parser.parse_lines(it).expect("Error parsing GFA file.")
+        };
+
+        for p in &graph.paths {
+            let (mut seq, _) = reconstruct_path(p, &graph);
+            let v = vec![b'.'; overlap];
+            seq.extend_from_slice(&v);
+            split_prefix_free2(&seq, triggers, &mut segments, &mut paths);
+        }
+        let (segments, paths) = normalize(segments, paths);
+        Self { overlap, segments, paths }
+    }
+
     pub fn path_size(&self) -> usize {
         self.paths.iter().map(|x| x.len()).sum()
     }

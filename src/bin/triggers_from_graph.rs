@@ -7,7 +7,7 @@ use std::fs::File;
 use std::io::Write;
 use std::str;
 
-/// Build prefix-free graph
+/// Find triggers related to arbitrary graph
 #[derive(Parser, Debug)]
 #[command(author, version, about)]
 struct Args {
@@ -15,6 +15,7 @@ struct Args {
     #[arg(short)]
     arb_gfa: String,
 
+    /// output base
     #[arg(short)]
     output: String,
 }
