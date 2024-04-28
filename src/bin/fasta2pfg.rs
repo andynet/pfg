@@ -19,7 +19,6 @@ fn main() {
     let args = Args::parse();
 
     let trigs = pf::load_trigs(&args.trigger_file);
-    println!("{:?}", trigs);
     let graph = pf::PFGraph::from_fasta(stdin().lock(), &trigs);
     let out = File::create(args.output_file).expect("Cannot open file.");
     graph.write_gfa(out).expect("Error writting GFA");

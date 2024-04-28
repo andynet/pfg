@@ -25,12 +25,10 @@ fn main() {
     let parser: GFAParser<usize, ()> = GFAParser::new();
     let graph = parser.parse_file(args.arb_gfa).expect("Error parsing GFA file.");
 
-    for k in (4..64).step_by(4) {
+    for k in (8..=32).step_by(2) {
         let triggers = get_triggers(&graph, k);
         let (all_breaks, new_breaks) = calculate_breaks(&graph, k, &triggers);
-        println!(
-            "k={k}\n\tall_breaks={all_breaks}\n\tnew_breaks={new_breaks}\n\tpfg_size=???"
-        );
+        println!("k={k}\n\tall_breaks={all_breaks}\n\tnew_breaks={new_breaks}");
 
         let output_file = args.output.clone() + &format!("_{:02}.txt", k);
         let mut out = File::create(output_file).expect("Cannot open file.");

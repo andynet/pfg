@@ -98,7 +98,7 @@ impl PFData {
             let (mut seq, _) = reconstruct_path(path, &gfa);
             let v = vec![b'.'; t_len];
             seq.extend_from_slice(&v);
-            split_prefix_free(&seq, trigs, &mut segments, &mut paths);
+            split_prefix_free2(&seq, trigs, &mut segments, &mut paths);
         }
         let (segments, paths) = normalize(segments, paths);
 
@@ -553,7 +553,7 @@ impl PFGraph {
             let mut seq = record.seq().to_owned();
             let v = vec![b'.'; overlap];
             seq.extend_from_slice(&v);
-            split_prefix_free(&seq, triggers, &mut segments, &mut paths);
+            split_prefix_free2(&seq, triggers, &mut segments, &mut paths);
         }
         let (segments, paths) = normalize(segments, paths);
         Self { overlap, segments, paths }
