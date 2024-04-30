@@ -1,6 +1,6 @@
 use clap::Parser;
-use pfg::pf::{self, PFGraph};
-use std::{fs::File, io::{stdin, Read, BufRead}};
+use pfg::pf;
+use std::{fs::File, io::stdin};
 
 /// Build prefix-free graph
 #[derive(Parser, Debug)]

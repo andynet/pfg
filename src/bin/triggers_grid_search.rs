@@ -6,7 +6,8 @@ use std::env;
 use counter::Counter;
 
 fn main() {
-    for k in 1..20 {
+    println!("k\ti\tpfg_size\tseg_size\tpat_size");
+    for k in 4..=32 {
         let filename: String = env::args().nth(1).unwrap();
         let f = File::open(&filename).expect("");
         let kmers = collect_kmers(f, k);
@@ -16,16 +17,20 @@ fn main() {
         vc.reverse();
         let vc = vc.iter().map(|x| x.2.to_owned()).collect::<Vec<_>>();
 
-        let m = usize::min(vc.len(), 50);
-        for i in (1..m).step_by(1) {
+        let mut i = 1;
+        let mut best = 1000000000000;
+        let mut fails = 0;
+        while fails <= 5 && i <= vc.len() {
             let trigs = &vc[..i];
             let f = BufReader::new(File::open(&filename).expect(""));
             let graph = pfg::pf::PFGraph::from_fasta(f, trigs);
-            println!("{k}\t{i}\t{}\t{}\t{}",
-                graph.segment_size() + graph.path_size(),
-                graph.segment_size(),
-                graph.path_size()
-            );
+            let seg_size = graph.segment_size();
+            let pat_size = graph.path_size();
+            let size = seg_size + pat_size;
+            println!("{k}\t{i}\t{size}\t{seg_size}\t{pat_size}");
+            if best > size { best = size; fails = 0 }
+            else { fails += 1 }
+            i += 1;
         }
     }
 
