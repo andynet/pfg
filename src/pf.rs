@@ -532,6 +532,10 @@ pub struct PFGraph {
 }
 
 impl PFGraph {
+    pub fn new(overlap: usize, segments: Vec<Vec<u8>>, paths: Vec<Vec<usize>>) -> Self {
+        Self { overlap, segments, paths }
+    }
+
     pub fn from_pfg(filename: &str) -> Self {
         let parser: GFAParser<usize, ()> = GFAParser::new();
         let gfa = parser.parse_file(filename).expect("Error parsing GFA file.");
@@ -540,7 +544,7 @@ impl PFGraph {
         let segments: Vec<Vec<u8>> = parse_segments(&gfa.segments);
         let overlap = determine_overlap(&segments);
 
-        Self { overlap, segments, paths }
+        Self::new(overlap, segments, paths)
     }
 
     pub fn from_fasta<T: Read + BufRead>(file: T, triggers: &[Vec<u8>]) -> Self {

@@ -1,11 +1,12 @@
 use clap::Parser;
 use gfa::parser::GFAParser;
 use gfa::gfa::GFA;
-use pfg::pf::reconstruct_path;
+use pfg::pf::{reconstruct_path, split_prefix_free2, PFGraph};
 use std::collections::HashSet;
 use std::fs::File;
 use std::io::Write;
 use std::str;
+use std::collections::HashMap;
 
 /// Find triggers related to arbitrary graph
 #[derive(Parser, Debug)]
@@ -28,8 +29,25 @@ fn main() {
 
     for k in (8..=32).step_by(2) {
         let triggers = get_triggers(&graph, k);
-        let (all_breaks, new_breaks) = calculate_breaks(&graph, k, &triggers);
-        println!("k={k}\n\tall_breaks={all_breaks}\n\tnew_breaks={new_breaks}");
+        let (old_breaks, new_breaks) = calculate_breaks(&graph, k, &triggers);
+
+        let mut segments = HashMap::new();
+        let mut paths = Vec::new();
+
+        let triggers: Vec<_> = triggers.into_iter().collect();
+        for p in &graph.paths {
+            let (mut seq, _) = reconstruct_path(p, &graph);
+            let v = vec![b'.'; k];
+            seq.extend_from_slice(&v);
+            split_prefix_free2(&seq, &triggers, &mut segments, &mut paths);
+        }
+        let segments: Vec<Vec<u8>> = segments.into_iter().map(|x| x.0).collect();
+        let result = PFGraph::new(k, segments, paths);
+
+        let ssize = result.segment_size();
+        let psize = result.path_size();
+        println!("k={k}\n\tall_breaks={old_breaks}\n\tnew_breaks={new_breaks}");
+        println!("\tseg_size={ssize}\n\tpath_size={psize}");
 
         let output_file = args.output.clone() + &format!("_{:02}.txt", k);
         let mut out = File::create(output_file).expect("Cannot open file.");
@@ -56,8 +74,8 @@ fn get_triggers(graph: &GFA<usize, ()>, k: usize) -> HashSet<Vec<u8>> {
 fn calculate_breaks(graph: &GFA<usize, ()>, k: usize, triggers: &HashSet<Vec<u8>>)
     -> (usize, usize)
 {
-    let mut all_breaks = 0;
     let mut new_breaks = 0;
+    let mut old_breaks = 0;
     for p in &graph.paths {
         let (mut seq, breaks) = reconstruct_path(p, graph);
         let v = vec![b'.'; k];
@@ -75,14 +93,14 @@ fn calculate_breaks(graph: &GFA<usize, ()>, k: usize, triggers: &HashSet<Vec<u8>
             };
 
             match (is_brk, is_trig) {
-                (true, true) => { all_breaks += 1; },
+                (true, true) => { old_breaks += 1;},
                 (true, false) => { unreachable!() },
-                (false, true) => { all_breaks += 1; new_breaks += 1; },
+                (false, true) => { new_breaks += 1; },
                 (false, false) => { /* good */ },
             }
         }
     }
-    return (all_breaks, new_breaks);
+    return (old_breaks, new_breaks);
 }
 
 #[test]
