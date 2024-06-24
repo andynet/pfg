@@ -27,7 +27,7 @@ fn main() {
     let parser: GFAParser<usize, ()> = GFAParser::new();
     let graph = parser.parse_file(args.arb_gfa).expect("Error parsing GFA file.");
 
-    for k in (8..=32).step_by(2) {
+    for k in (8..=32).step_by(4) {
         let triggers = get_triggers(&graph, k);
         let (old_breaks, new_breaks) = calculate_breaks(&graph, k, &triggers);
 
