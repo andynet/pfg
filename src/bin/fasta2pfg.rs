@@ -22,6 +22,10 @@ fn main() {
     let graph = pf::PFGraph::from_fasta(stdin().lock(), &trigs);
     let out = File::create(args.output_file).expect("Cannot open file.");
     graph.write_gfa(out).expect("Error writting GFA");
-    println!("Segment size: {}", graph.segment_size());
-    println!("Path size: {}", graph.path_size());
+    println!("Constructed PFG with:");
+    println!("Overlaps:     {:>12}", graph.overlaps());
+    println!("#paths:       {:>12}", graph.n_paths());
+    println!("#segments:    {:>12}", graph.n_segments());
+    println!("Segment size: {:>12}", graph.segment_size());
+    println!("Path size:    {:>12}", graph.path_size());
 }

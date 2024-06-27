@@ -592,6 +592,9 @@ impl PFGraph {
     pub fn segment_size(&self) -> usize {
         self.segments.iter().map(|x| x.len()).sum()
     }
+    pub fn n_segments(&self) -> usize { self.segments.len() }
+    pub fn n_paths(&self) -> usize { self.paths.len() }
+    pub fn overlaps(&self) -> usize { self.overlap }
 
     pub fn write_gfa(&self, mut output: impl Write) -> io::Result<()> {
         writeln!(output, "H\tVN:Z:1.1")?;
