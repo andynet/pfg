@@ -1,4 +1,6 @@
 /cache
 /data
 /target
+/phiX174
+/salmonella_exp
 Cargo.lock

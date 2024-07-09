@@ -30,10 +30,33 @@ fn main() {
     }
 
     // print_heatmap(&kmap);
-    // let out = BufWriter::new(File::create(outfile).unwrap());
-    // save_results(&kmap, out);
-    let clean: KMap = kmap.into_iter().filter(|x| {measure(&x.1) == 1.0}).collect();
-    println!("{}", clean.len());
+    let out = BufWriter::new(File::create(outfile).unwrap());
+    save_results(&kmap, out);
+
+    let mut clean: KMap = kmap.into_iter().filter(|x| {measure(&x.1) == 1.0}).collect();
+
+    // let mut segments: HashMap<(Vec<u8>, Vec<u8>, usize), u32> = HashMap::new();
+
+    let kmap2 = clean.clone();
+    for (key, v) in &kmap2 {
+        let nzeros = *v.iter().counts().get(&0).unwrap_or(&0);
+        if nzeros != 15 { continue; }
+
+        let kmer = key.to_vec();
+        let context: (u8, u8) = get_singleton_context(v);
+        let n_occ: u32 = clean.get(&kmer).unwrap().iter().sum();
+
+        let (rkmer, rlen) = expand_right(&mut clean, &kmer, context, 0);
+        let (lkmer, llen) = expand_left( &mut clean, &kmer, context, 0);
+        let len = rlen + llen + k;
+        println!("{} => {}\t{}\t{}\t{}",
+            str::from_utf8(&kmer).unwrap(),
+            str::from_utf8(&lkmer).unwrap(),
+            str::from_utf8(&rkmer).unwrap(), 
+            len,
+            n_occ
+        );
+    }
 }
 
 #[test]
@@ -99,7 +122,7 @@ fn expand_right(
     new_kmer.push(context.1);
 
     match kmap.entry(new_kmer.clone()) {
-        Entry::Vacant(x) => { return (new_kmer.to_vec(), len) }
+        Entry::Vacant(x) => { return (kmer.to_vec(), len) }
         Entry::Occupied(mut x) => {
             let context = x.get_mut();
             let after = get_right_context(context, kmer[0]);
@@ -129,7 +152,7 @@ fn expand_left(
     new_kmer.extend(&kmer[..k-1]);
 
     match kmap.entry(new_kmer.clone()) {
-        Entry::Vacant(x) => { return (new_kmer.to_vec(), len) }
+        Entry::Vacant(x) => { return (kmer.to_vec(), len) }
         Entry::Occupied(mut x) => {
             let context = x.get_mut();
             let before = get_left_context(context, kmer[k-1]);
