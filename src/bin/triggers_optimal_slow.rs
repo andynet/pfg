@@ -7,13 +7,14 @@ use std::io::Write;
 fn main() {
     let k = 2;
     let alph = [b'A', b'C', b'G', b'T'];
-    let filename = "phiX174/phiX174.2line.fna";
+    // let filename = "phiX174/phiX174.2line.fna";
+    let filename = "small_seqs/seqs.fna";
 
     let x = vec![alph; k];
     let multi_prod = x.into_iter().multi_cartesian_product();
 
-    (1..=16).collect_vec().par_iter().for_each(|m| {
-        let outfile = format!("{}.{:02}.txt", filename, m);
+    (1..=4).collect_vec().par_iter().for_each(|m| {
+        let outfile = format!("{}_k{}.{:02}.txt", filename, k, m);
         let mut out = BufWriter::new(File::create(outfile).unwrap());
 
         for x in multi_prod.clone().combinations(*m) {
