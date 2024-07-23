@@ -1,12 +1,12 @@
 #![allow(dead_code)]
-#![allow(unused_variables)]
+// #![allow(unused_variables)]
+use pfg::kmap::KMap;
 
 use core::panic;
 use std::collections::HashMap;
 use std::collections::hash_map::Entry;
 use std::fs::File;
 use std::io::stdin;
-use std::io::stdout;
 use std::io::BufWriter;
 use std::io::Write;
 use bio::io::fasta;
@@ -14,19 +14,20 @@ use itertools::Itertools;
 use std::env;
 use std::str;
 
-const ALPH: usize = 4;
-type KMap = HashMap<Vec<u8>, Box<[u32; ALPH.pow(2)]>>;
+
+// const ALPH: usize = 4;
+// type KMap = HashMap<Vec<u8>, Box<[u32; ALPH.pow(2)]>>;
 
 fn main() {
     let k: usize = env::args().nth(1).unwrap().parse().unwrap();
     let outfile: String = env::args().nth(2).unwrap();
 
-    let mut kmap: KMap = HashMap::new();
+    let mut kmap: KMap = KMap::new(k);
     let mut records = fasta::Reader::new(stdin()).records();
     while let Some(Ok(record)) = records.next() {
         let mut seq = record.seq().to_owned();
         seq.push(b'$');
-        add_counts(&mut kmap, &seq, k);
+        kmap.add_kmers(&seq);
     }
 
     // print_heatmap(&kmap);
@@ -42,15 +43,16 @@ fn main() {
         let nzeros = *v.iter().counts().get(&0).unwrap_or(&0);
         if nzeros != 15 { continue; }
 
-        let kmer = key.to_vec();
+        // let kmer = key.to_vec();
+        let kmer = key;
         let context: (u8, u8) = get_singleton_context(v);
-        let n_occ: u32 = clean.get(&kmer).unwrap().iter().sum();
+        let n_occ: u32 = clean.get(kmer).unwrap().iter().sum();
 
-        let (rkmer, rlen) = expand_right(&mut clean, &kmer, context, 0);
-        let (lkmer, llen) = expand_left( &mut clean, &kmer, context, 0);
+        let (rkmer, rlen) = expand_right(&mut clean, kmer.as_ref(), context, 0);
+        let (lkmer, llen) = expand_left( &mut clean, kmer.as_ref(), context, 0);
         let len = rlen + llen + k;
         println!("{} => {}\t{}\t{}\t{}",
-            str::from_utf8(&kmer).unwrap(),
+            kmer,
             str::from_utf8(&lkmer).unwrap(),
             str::from_utf8(&rkmer).unwrap(), 
             len,
@@ -72,11 +74,12 @@ fn find_chains() {
     ];
     let k = 2;
 
-    let mut kmap = HashMap::new();
+    let mut kmap = KMap::new(k);
     for seq in seqs {
-        add_counts(&mut kmap, seq, k);
+        kmap.add_kmers(seq)
     }
     // print_heatmap(&kmap);
+    use std::io::stdout;
     save_results(&kmap, stdout());
     let mut kmap: KMap = kmap.into_iter().filter(|x| {measure(&x.1) == 1.0}).collect();
 
@@ -86,14 +89,14 @@ fn find_chains() {
         let nzeros = *v.iter().counts().get(&0).unwrap_or(&0);
         if nzeros != 15 { continue; }
 
-        let kmer = key.to_vec();
+        let kmer = key;
         let context: (u8, u8) = get_singleton_context(v);
-        let n_occ: u32 = kmap.get(&kmer).unwrap().iter().sum();
+        let n_occ: u32 = kmap.get(kmer).unwrap().iter().sum();
 
-        let (rkmer, rlen) = expand_right(&mut kmap, &kmer, context, 1);
-        let (lkmer, llen) = expand_left( &mut kmap, &kmer, context, 1);
+        let (rkmer, rlen) = expand_right(&mut kmap, kmer.as_ref(), context, 1);
+        let (lkmer, llen) = expand_left( &mut kmap, kmer.as_ref(), context, 1);
         println!("{} => {}\t{}\t{}\t{}",
-            str::from_utf8(&kmer).unwrap(),
+            kmer,
             str::from_utf8(&lkmer).unwrap(),
             str::from_utf8(&rkmer).unwrap(), 
             rlen + llen + k,
@@ -121,8 +124,8 @@ fn expand_right(
     let mut new_kmer = kmer[1..].to_vec();
     new_kmer.push(context.1);
 
-    match kmap.entry(new_kmer.clone()) {
-        Entry::Vacant(x) => { return (kmer.to_vec(), len) }
+    match kmap.entry(new_kmer[..].into()) {
+        Entry::Vacant(_x) => { return (kmer.to_vec(), len) }
         Entry::Occupied(mut x) => {
             let context = x.get_mut();
             let after = get_right_context(context, kmer[0]);
@@ -151,8 +154,8 @@ fn expand_left(
     let mut new_kmer = vec![context.0];
     new_kmer.extend(&kmer[..k-1]);
 
-    match kmap.entry(new_kmer.clone()) {
-        Entry::Vacant(x) => { return (kmer.to_vec(), len) }
+    match kmap.entry(new_kmer[..].into()) {
+        Entry::Vacant(_x) => { return (kmer.to_vec(), len) }
         Entry::Occupied(mut x) => {
             let context = x.get_mut();
             let before = get_left_context(context, kmer[k-1]);
@@ -190,7 +193,7 @@ fn save_results(kmap: &KMap, mut out: impl Write) {
     }
     result.sort_by(|a, b| a.0.total_cmp(&b.0));
     for (val, nz, k, v) in result {
-        write!(out, "{}\t", std::str::from_utf8(k).unwrap()).unwrap();
+        write!(out, "{}\t", k).unwrap();
         write!(out, "{:.4}\t", val).unwrap();
         write!(out, "{}\t", nz).unwrap();
         writeln!(out, "{:?}", v).unwrap();
@@ -199,7 +202,7 @@ fn save_results(kmap: &KMap, mut out: impl Write) {
 
 fn print_heatmap(kmap: &KMap) {
     let mut heatmap = [[0; 16];16];
-    for v in kmap.values() {
+    for (_, v) in kmap {
         let nzeros = *v.iter().counts().get(&0).unwrap_or(&0);
         let value = measure(v);
         heatmap[nzeros][ftointerval(value)] += 1;
@@ -295,22 +298,22 @@ fn ptoi(pair: (u8, u8)) -> Option<usize> {
     }
 }
 
-#[test]
-fn test_add_kmers() {
-    let mut kmap = HashMap::new();
-    let seq = b"ACGTGTGCAXGTGCAGATGCTTAGCTTAGCTTAGCCCTAGATATAGCTAGCTAGCTAGCTAG";
-    let k = 2;
-
-    add_counts(&mut kmap, seq, k);
-    for (k, v) in kmap.iter() {
-        print!("{}\t", std::str::from_utf8(k).unwrap());
-        print!("{:.4}\t", measure(v));
-        println!("{:?}", v);
-        let x = v.iter().counts()[&0];
-        println!("{:?}", x);
-
-    }
-}
+// #[test]
+// fn test_add_kmers() {
+//     let mut kmap = HashMap::new();
+//     let seq = b"ACGTGTGCAXGTGCAGATGCTTAGCTTAGCTTAGCCCTAGATATAGCTAGCTAGCTAGCTAG";
+//     let k = 2;
+// 
+//     add_counts(&mut kmap, seq, k);
+//     for (k, v) in kmap.iter() {
+//         print!("{}\t", std::str::from_utf8(k).unwrap());
+//         print!("{:.4}\t", measure(v));
+//         println!("{:?}", v);
+//         let x = v.iter().counts()[&0];
+//         println!("{:?}", x);
+// 
+//     }
+// }
 
 fn measure(m: &[u32; 16]) -> f64 {
     // try all 24 possibilities of independent columns and rows and choose max

@@ -30,7 +30,7 @@ pub struct PFData {
     /// position in the segment associated with suffix array
     pos: Vec<usize>,
 
-    path_join: Vec<usize>,
+    _path_join: Vec<usize>,
     /// length of segments
     seg_len: Vec<usize>,
     /// starting positions of a segment in expanded path join
@@ -69,7 +69,7 @@ impl PFData {
             seq_pos[i] = permutation_apply(&iperm, &seq_pos[i]);
         }
 
-        Self { segment_join, sa, lcp, id, pos, path_join, seg_len, seq_pos, rc_rank, overlap }
+        Self { segment_join, sa, lcp, id, pos, _path_join: path_join, seg_len, seq_pos, rc_rank, overlap }
     }
 
     pub fn from_pfgraph(filename: &str) -> Self {

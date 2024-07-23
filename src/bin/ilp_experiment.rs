@@ -29,7 +29,7 @@ fn main() {
         .records()
         .map(|x| x.expect("Incorrect fasta record.").seq().to_vec());
 
-    let counts = get_valid_segments(seqs, 4);
+    let counts = get_valid_segments(seqs, 5);
     // println!("{:?}", counts);
     // let mut counts: Vec<_> = counts.iter().collect();
     // counts.sort();
