@@ -25,7 +25,7 @@ impl Debug for Kmer {
 
 impl Display for Kmer {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        write!(f, "{}\t", from_utf8(&self.0).unwrap())?;
+        write!(f, "{}", from_utf8(&self.0).unwrap())?;
         Ok(())
     }
 }
