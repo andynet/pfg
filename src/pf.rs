@@ -431,12 +431,15 @@ pub fn split_prefix_free(
     paths.push(path);
 }
 
-pub fn split_prefix_free2(
-    seq: &[u8],           // must end with sentinel
-    triggers: &[Vec<u8>], // must be non-empty
+pub fn split_prefix_free2<I, P>(
+    seq: &[u8],     // must end with sentinel
+    triggers: I,    // must be non-empty
     segments: &mut HashMap<Vec<u8>, usize>,
     paths: &mut Vec<Vec<usize>>,
-) {
+) where
+    I: IntoIterator<Item = P>,
+    P: AsRef<[u8]>, 
+{
     let ac = AhoCorasick::new(triggers).unwrap();
     let mut path = Vec::new();
     let mut i = 0;
@@ -547,8 +550,31 @@ impl PFGraph {
         Self::new(overlap, segments, paths)
     }
 
-    pub fn from_fasta<T: Read + BufRead>(file: T, triggers: &[Vec<u8>]) -> Self {
-        let overlap = triggers.first().unwrap().len();
+    // pub fn from_fasta<F>(file: F, triggers: &[Vec<u8>]) -> Self 
+    // fn tmp4<'a, I, P>(trigs: &'a I) 
+    // where
+    //     &'a I: IntoIterator<Item = P>,
+    //     I: ?Sized,
+    //     P: AsRef<[u8]> + 'a
+    // {
+    //     let kmer = trigs.into_iter().next().unwrap();
+    //     let _x = AsRef::<[u8]>::as_ref(&kmer).len();
+    //     for _ in 1..10 {
+    //         let _ac = AhoCorasick::new(trigs).unwrap();
+    //     }
+    // }
+
+    pub fn from_fasta<'a, F, I, P>(file: F, triggers: &'a I) -> Self 
+    where
+        F: Read + BufRead,
+        &'a I: IntoIterator<Item = P>,
+        I: ?Sized,
+        P: AsRef<[u8]> + 'a,
+    {
+        let overlap = {
+            let first = triggers.into_iter().next().expect("Triggers cannot be empty.");
+            first.as_ref().len()
+        };
         let mut segments = HashMap::new();
         let mut paths = Vec::new();
 
