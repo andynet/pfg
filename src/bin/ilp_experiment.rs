@@ -3,6 +3,40 @@ use std::{fmt::Debug, str::from_utf8};
 use std::fmt::{Formatter, Result};
 use counter::Counter;
 use aho_corasick::AhoCorasick;
+use bio::io::fasta;
+use itertools::Itertools;
+use std::fs::File;
+use pfg::pf::load_trigs;
+use std::io::{BufWriter, Write};
+
+
+fn main() {
+    let sequences = "phiX174/phiX174.2line.clean.fna";
+    let trigger_file = "phiX174/nonshiftable.08mer.txt";
+    let output = "phiX174/nonshiftable.08mer.segments.txt";
+    // let sequences = "small_seqs/seqs.fna";
+    // let trigger_file = "small_seqs/nonshiftable.06mer.txt";
+
+    let f = File::open(sequences).expect("Unable to read file.");
+    let seqs = fasta::Reader::new(f).records()
+        .map(|x| x.expect("Incorrect fasta record.").seq().to_vec());
+
+    let kmers = load_trigs(trigger_file);
+    let k = kmers.first().expect("Needs at least 1 trigger word.").len();
+
+    let mut counter: Counter<Segment, usize> = Counter::new();
+    for seq in seqs {
+        let seq = [vec![b'$'; k], seq, vec![b'$'; k]].concat();
+        counter.extend(get_inner_segments(&seq, &kmers));
+        counter.extend(get_border_segments(&seq, &kmers));
+        counter[&Segment(seq)] += 1;
+    }
+
+    let mut out = BufWriter::new(File::create(output).expect("Cannot open file for writing."));
+    for (s, n) in counter {
+        writeln!(out, "{}\t{}", n, from_utf8(&s.0).unwrap()).expect("Error writing.");
+    }
+}
 
 #[derive(PartialEq, Eq, Hash, Clone, PartialOrd, Ord)]
 struct Segment(Vec<u8>);
@@ -12,44 +46,6 @@ impl Debug for Segment {
         write!(f, "{}", from_utf8(&self.0).unwrap())?;
         Ok(())
     }
-}
-
-fn main() {
-    // let seqs = [
-    //     b"ACGTGCGTGC".to_vec(),
-    //     b"ACACACACAC".to_vec(),
-    //     b"ACGTGTGCGC".to_vec()
-    // ].into_iter();
-
-    use bio::io::fasta;
-    use std::fs::File;
-    let filename = "phiX174/phiX174.2line.fna";
-    let f = File::open(filename).expect("Unable to read file.");
-    let seqs = fasta::Reader::new(f)
-        .records()
-        .map(|x| x.expect("Incorrect fasta record.").seq().to_vec());
-
-    let counts = get_valid_segments(seqs, 5);
-    // println!("{:?}", counts);
-    // let mut counts: Vec<_> = counts.iter().collect();
-    // counts.sort();
-    // println!("{:?}", counts.len());
-    for (s, n) in counts {
-        println!("{}\t{:?}", n, s);
-    }
-}
-
-fn get_valid_segments<T>(seqs: T, k: usize) -> Counter<Segment, usize> 
-    where T: Iterator<Item = Vec<u8>>
-{
-    let mut count = Counter::new();
-    for s in seqs {
-        let x = seq_to_segments(&s, k);
-        count.extend(x);
-        let x = border_segments(&s, k);
-        count.extend(x);
-    }
-    return count;
 }
 
 fn count_kmers(seq: &[u8], k: usize) -> HashSet<Vec<u8>> {
@@ -114,6 +110,109 @@ fn seq_to_segments(seq: &[u8], k: usize) -> Counter<Segment, usize> {
     }
     return count;
 }
+
+fn get_inner_segments(seq: &[u8], kmers: &[Vec<u8>]) -> Counter<Segment, usize> {
+    let k = kmers[0].len();
+
+    let mut count = Counter::new();
+    let ac = AhoCorasick::new(kmers).unwrap();
+    let matched = ac.find_overlapping_iter(seq).map(|m| m.start()).collect_vec();
+
+    for i in 0..matched.len()-1 {
+        let first_kmer = &seq[matched[i]..matched[i]+k];
+
+        let mut seen = HashSet::new();
+        for j in i+1..matched.len() {
+            let last_kmer = &seq[matched[j]..matched[j]+k];
+
+            // skips segments with structure x..y..y
+            if seen.contains(last_kmer) { continue; }
+            seen.insert(last_kmer);
+
+            let segment = Segment(seq[matched[i]..matched[j]+k].to_vec());
+            count[&segment] += 1;
+
+            // skips segments with structure x..x..y (and terminates next search)
+            if last_kmer == first_kmer { break; }
+        }
+    }
+    return count;
+}
+
+#[test]
+fn test_get_inner_segments() {
+    let seq = b"AGCTGATCGTCGCTAGTCAA";
+    let res_inner: Counter<Segment, usize> = Counter::from_iter([
+        Segment(b"TCGCTAGTC".to_vec()),
+        Segment(b"CTGATCGTCGCT".to_vec()),
+        Segment(b"TCGTC".to_vec()),
+        Segment(b"CTGATC".to_vec()),
+        Segment(b"TCGCT".to_vec()),
+        Segment(b"CTAGTC".to_vec())
+    ]); 
+
+    //  seq = b"  *   *  *  *   *   ";
+    //  seq = b"  CTGATC            "  ;
+    //  seq = b"      TCGTC         "  ;
+    //  seq = b"         TCGCT      "  ;
+    //  seq = b"            CTAGTC  "  ;
+    //  seq = b"  CTGATCGTCGCT      "  ;
+    //  seq = --------TCGTC----------  ;
+    //  seq = b"         TCGCTAGTC  "  ;
+    //  outer ========================
+    //  seq = $$AGCT                "  ;
+    //  seq = $$AGCTGATC            "  ;
+    //  seq = b"            CTAGTCAA$$";
+    //  seq = b"                TCAA$$";
+    let kmers = &[b"CT".to_vec(), b"TC".to_vec()];
+
+    let tmp = get_inner_segments(seq, kmers);
+    println!("{:?}", tmp);
+    let tmp2 = get_border_segments(seq, kmers);
+    println!("{:?}", tmp2);
+    // Counter { map: {AGCTGATC: 1, TCAA: 1, AGCT: 1, CTAGTCAA: 1}, zero: 0 }
+
+}
+
+fn get_border_segments(seq: &[u8], kmers: &[Vec<u8>]) -> Counter<Segment, usize> {
+    let k = kmers[0].len();
+
+    let mut count = Counter::new();
+    let ac = AhoCorasick::new(kmers).unwrap();
+    let matched = ac.find_overlapping_iter(seq).map(|m| m.start()).collect_vec();
+
+    let mut seen = HashSet::new();
+    for i in 0..matched.len() {
+        let last_kmer = &seq[matched[i]..matched[i]+k];
+
+        // skips segments with structure x..y..y
+        if seen.contains(last_kmer) { continue; }
+        seen.insert(last_kmer);
+
+        let segment = Segment(seq[..matched[i]+k].to_vec());
+        count[&segment] += 1;
+
+        // we have seen all kmers, no point in continuing
+        if seen.len() == kmers.len() { break; } 
+    }
+
+    seen.clear();
+    for i in (0..matched.len()).rev() {
+        let first_kmer = &seq[matched[i]..matched[i]+k];
+
+        // skips segments with structure x..x..y
+        if seen.contains(first_kmer) { continue; }
+        seen.insert(first_kmer);
+
+        let segment = Segment(seq[matched[i]..].to_vec());
+        count[&segment] += 1;
+
+        // we have seen all kmers, no point in continuing
+        if seen.len() == kmers.len() { break; } 
+    }
+    return count;
+}
+
 
 // -- test related stuff
 #[cfg(test)]
