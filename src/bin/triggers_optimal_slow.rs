@@ -6,11 +6,23 @@ use std::sync::{Arc, Mutex};
 use std::{fs::File, io::{BufReader, BufWriter}, str};
 
 fn main() {
-    let sequences = "phiX174/phiX174.2line.clean.fna";
-    let trigger_file = "phiX174/nonshiftable.02mer.txt";
+    // let sequences = "phiX174/phiX174.2line.clean.fna";
+    // let trigger_file = "phiX174/nonshiftable.02mer.txt";
+    // let min = 1;
+    // let max = 16;
+    // let output_base = "phiX174/exhaustive_stats_02mer";
+
+    // let sequences = "small_seqs/seqs.fna";
+    // let trigger_file = "small_seqs/nonshiftable.03mer.txt";
+    // let min = 1;
+    // let max = 23;
+    // let output_base = "small_seqs/exhaustive_stats_03mer";
+
+    let sequences = "small_seqs/seqs.fna";
+    let trigger_file = "small_seqs/manual.02mer.txt";
     let min = 1;
-    let max = 16;
-    let output_base = "phiX174/exhaustive_stats_02mer";
+    let max = 13;
+    let output_base = "small_seqs/exhaustive_stats_manual02mer";
 
     let triggers = load_trigs(trigger_file);
     (min..=max).collect_vec().iter().for_each(|m| {

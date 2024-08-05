@@ -1,6 +1,7 @@
 use std::collections::{hash_map, hash_map::Entry, HashMap};
 use std::fmt::{Debug, Display, Formatter, Result};
 use std::str::from_utf8;
+use itertools::Itertools;
 
 #[allow(non_camel_case_types)]
 type alph = u8;
@@ -50,6 +51,16 @@ impl KMap {
 
     pub fn get(&self, k: &Kmer) -> Option<Box<[u32; 16]>>{
         self.map.get(k).cloned()
+    }
+
+    pub fn n_contexts(&self, k: &Kmer) -> usize {
+        match self.map.get(k) {
+            None => { return 0; },
+            Some(v) => {
+                let nzeros = *v.iter().counts().get(&0).unwrap_or(&0);
+                return v.len() - nzeros;
+            },
+        }
     }
 
     /// seq is a slice from alphabet 0=$,1=A,2=C,3=G,4=T
@@ -119,16 +130,18 @@ impl KMap {
     /// returns 2 vectors representing for each position of the sequence
     /// how many contexts is to the left and to the right of the kmer
     /// at that position
-    pub fn annotate(&self, seq: &[alph]) -> (Vec<u8>, Vec<u8>){
+    pub fn annotate(&self, seq: &[alph]) -> (Vec<u8>, Vec<u8>, Vec<usize>){
         let mut left = Vec::new();
         let mut right = Vec::new();
+        let mut contexts = Vec::new();
         let k = self.k;
         for i in 1..seq.len()-k {
             let kmer = &seq[i..i+k].into();
             left.push(self.to_left(kmer).len().try_into().unwrap());
             right.push(self.to_right(kmer).len().try_into().unwrap());
+            contexts.push(self.n_contexts(kmer));
         }
-        return (left, right);
+        return (left, right, contexts);
     }
 
     fn try_ptoi(context: (alph, alph)) -> Option<usize> {
@@ -208,7 +221,7 @@ fn test_basic_functionality() {
     let new_kmer = kmap.to_left(&b"TC"[..].into());
     println!("{:?}", new_kmer);
 
-    let (left, right) = kmap.annotate(seq);
+    let (left, right, _) = kmap.annotate(seq);
     println!("{}", from_utf8(seq).unwrap());
     for x in left { print!("{}", x); }
     println!();
@@ -242,7 +255,7 @@ fn exp_see_contexts() {
     let mut records = fasta::Reader::new(f).records();
     while let Some(Ok(record)) = records.next() {
         let seq = record.seq();
-        let (left, right) = kmap.annotate(seq);
+        let (left, right, _) = kmap.annotate(seq);
         println!("{}", record.id());
         println!("{}", from_utf8(record.seq()).unwrap());
 
@@ -256,4 +269,16 @@ fn exp_see_contexts() {
         for _ in 0..k { print!("-"); }
         println!();
     }
+}
+
+// TODO: make this into KMap method?
+pub fn is_shiftable(kmap: &KMap, kmer: &Kmer) -> bool {
+    let left = kmap.to_left(kmer);
+    let right = kmap.to_right(kmer);
+
+    // maybe measure == 1 are shiftable?
+    if left.len() != 1 || right.len() != 1 { return false; }
+    if kmap.to_right(&left[0]).len() != 1 { return false; }
+    if kmap.to_left(&right[0]).len() != 1 { return false; }
+    return true
 }

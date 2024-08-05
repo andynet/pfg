@@ -12,8 +12,8 @@ use std::io::{BufWriter, Write};
 
 fn main() {
     let sequences = "phiX174/phiX174.2line.clean.fna";
-    let trigger_file = "phiX174/nonshiftable.08mer.txt";
-    let output = "phiX174/nonshiftable.08mer.segments.txt";
+    let trigger_file = "phiX174/nonshiftable_v2.06mer.txt";
+    let output = "phiX174/nonshiftable_v2.06mer.segments.txt";
     // let sequences = "small_seqs/seqs.fna";
     // let trigger_file = "small_seqs/nonshiftable.06mer.txt";
 
@@ -48,69 +48,6 @@ impl Debug for Segment {
     }
 }
 
-fn count_kmers(seq: &[u8], k: usize) -> HashSet<Vec<u8>> {
-    let mut count = HashSet::new();
-    for i in 0..seq.len()-k {
-        let kmer = seq[i..i+k].to_vec();
-        count.insert(kmer);
-    }
-    return count;
-}
-
-fn border_segments(seq: &[u8], k: usize) -> Counter<Segment, usize> {
-    let kmers = count_kmers(seq, k);
-
-    let sentinel = vec![b'$'; k];
-    let mut seq2 = Vec::new(); // sentinel + seq + sentinel;
-    seq2.extend_from_slice(&sentinel);
-    seq2.extend_from_slice(seq);
-    seq2.extend_from_slice(&sentinel);
-
-    let mut counts = Counter::new();
-
-    for kmer in kmers.iter() {
-        let ac = AhoCorasick::new([kmer]).unwrap();
-        if let Some(m) = ac.find(&seq2) {
-            counts[&Segment(seq2[0..m.end()].to_vec())] += 1;
-        };
-    }
-
-    let mut seq3 = seq2.clone();
-    seq3.reverse();
-    let n = seq3.len();
-    for kmer in kmers.iter() {
-        let mut kmer = kmer.clone();
-        kmer.reverse();
-        let ac = AhoCorasick::new([kmer]).unwrap();
-        if let Some(m) = ac.find(&seq3) {
-            let end = n - m.end();
-            counts[&Segment(seq2[end..n].to_vec())] += 1;
-        };
-    }
-    counts[&Segment(seq2)] += 1;
-    return counts;
-}
-
-fn seq_to_segments(seq: &[u8], k: usize) -> Counter<Segment, usize> {
-    let mut count = Counter::new();
-    let n = seq.len();
-
-    for i in 0..n-k {
-        let ac = AhoCorasick::new([&seq[i..i+k]]).unwrap();
-        let end = match ac.find(&seq[i+1..]) {
-            Some(m) => { i+1+m.end() },
-            None => { n },
-        };
-
-        for j in i+k..end {
-            if seg_is_valid(&seq[i..=j], k) {
-                count[&Segment(seq[i..=j].to_vec())] += 1;
-            }
-        }
-    }
-    return count;
-}
-
 fn get_inner_segments(seq: &[u8], kmers: &[Vec<u8>]) -> Counter<Segment, usize> {
     let k = kmers[0].len();
 
@@ -137,41 +74,6 @@ fn get_inner_segments(seq: &[u8], kmers: &[Vec<u8>]) -> Counter<Segment, usize> 
         }
     }
     return count;
-}
-
-#[test]
-fn test_get_inner_segments() {
-    let seq = b"AGCTGATCGTCGCTAGTCAA";
-    let res_inner: Counter<Segment, usize> = Counter::from_iter([
-        Segment(b"TCGCTAGTC".to_vec()),
-        Segment(b"CTGATCGTCGCT".to_vec()),
-        Segment(b"TCGTC".to_vec()),
-        Segment(b"CTGATC".to_vec()),
-        Segment(b"TCGCT".to_vec()),
-        Segment(b"CTAGTC".to_vec())
-    ]); 
-
-    //  seq = b"  *   *  *  *   *   ";
-    //  seq = b"  CTGATC            "  ;
-    //  seq = b"      TCGTC         "  ;
-    //  seq = b"         TCGCT      "  ;
-    //  seq = b"            CTAGTC  "  ;
-    //  seq = b"  CTGATCGTCGCT      "  ;
-    //  seq = --------TCGTC----------  ;
-    //  seq = b"         TCGCTAGTC  "  ;
-    //  outer ========================
-    //  seq = $$AGCT                "  ;
-    //  seq = $$AGCTGATC            "  ;
-    //  seq = b"            CTAGTCAA$$";
-    //  seq = b"                TCAA$$";
-    let kmers = &[b"CT".to_vec(), b"TC".to_vec()];
-
-    let tmp = get_inner_segments(seq, kmers);
-    println!("{:?}", tmp);
-    let tmp2 = get_border_segments(seq, kmers);
-    println!("{:?}", tmp2);
-    // Counter { map: {AGCTGATC: 1, TCAA: 1, AGCT: 1, CTAGTCAA: 1}, zero: 0 }
-
 }
 
 fn get_border_segments(seq: &[u8], kmers: &[Vec<u8>]) -> Counter<Segment, usize> {
@@ -213,44 +115,29 @@ fn get_border_segments(seq: &[u8], kmers: &[Vec<u8>]) -> Counter<Segment, usize>
     return count;
 }
 
-
-// -- test related stuff
-#[cfg(test)]
-fn all_segments(seq: &[u8], k: usize) -> Counter<Segment, usize> {
-    let mut count = Counter::new();
-    let n = seq.len();
-    for i in 0..n-k {
-        for j in i+k..n {
-            count[&Segment(seq[i..=j].to_vec())] += 1;
-        }
-    }
-    return count;
-}
-
-fn seg_is_valid(seg: &[u8], k: usize) -> bool {
-    let n = seg.len();
-    let ac = AhoCorasick::new([&seg[0..k], &seg[n-k..n]]).unwrap();
-    match ac.find(&seg[1..n-1]) {
-        Some(_) => return false,
-        None => return true,
-    }
-}
-
 #[test]
-fn test_seg_validation() {
-    assert!(seg_is_valid(b"ACGTAC", 2));
-    assert!(!seg_is_valid(b"ACACAC", 2));
+fn test_get_segments() {
+    let kmers = &[b"CT".to_vec(), b"TC".to_vec()];
+    let seq1 = b"AGCTGATCGTCGCTAGTCAA";
+    //         b"  *   *  *  *   *   "
+    let res_inner: Counter<Segment, usize> = Counter::from_iter([
+        Segment( b"CTGATC".to_vec()),
+        Segment( b"CTGATCGTCGCT".to_vec()),
+        Segment(     b"TCGTC".to_vec()),
+        Segment(        b"TCGCTAGTC".to_vec()),
+        Segment(        b"TCGCT".to_vec()),
+        Segment(           b"CTAGTC".to_vec())
+    ]); 
+
+    let seq2 =  b"$$AGCTGATCGTCGCTAGTCAA$$";
+    let res_border: Counter<Segment, usize> = Counter::from_iter([
+        Segment(b"$$AGCT".to_vec()),
+        Segment(b"$$AGCTGATC".to_vec()),
+        Segment(                  b"TCAA$$".to_vec()),
+        Segment(              b"CTAGTCAA$$".to_vec()),
+    ]);
+    let inner = get_inner_segments(seq1, kmers);
+    assert_eq!(inner, res_inner);
+    let border = get_border_segments(seq2, kmers);
+    assert_eq!(border, res_border);
 }
-
-#[test]
-fn test_seq_to_seg() {
-    use std::collections::HashMap;
-    let seq = b"ACGTGCGTGC";
-    let result = all_segments(seq, 2);
-    let result: HashMap<_, _> = 
-        result.into_iter().filter(|(seg, _)| seg_is_valid(&seg.0, 2)).collect();
-
-    let count = seq_to_segments(seq, 2).into_map();
-    assert!(result == count);
-}
-
